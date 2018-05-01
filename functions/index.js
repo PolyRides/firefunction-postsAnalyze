@@ -1,4 +1,5 @@
 const functions = require('firebase-functions');
+<<<<<<< HEAD
 // const spacyNLP = require("spacy-nlp");
 var admin = require('firebase-admin');
 var nlp = require('compromise')
@@ -7,6 +8,11 @@ var speak = require("speakeasy-nlp");
 admin.initializeApp(functions.config().firebase);
 
 var database = admin.database();
+=======
+var admin = require('firebase-admin');
+
+admin.initializeApp(functions.config().firebase);
+>>>>>>> d89c764a7d51d97037197ae653ce5712df08a409
 
 const rideOffermockData = {
 origin: "San Luis Obispo, CA", 
@@ -21,6 +27,7 @@ cost: 20,
 description: "This is a ride"
 }
 
+<<<<<<< HEAD
 
 exports.ProcessPost = functions.database.ref('/posts/')
     .onCreate((snapshot, context) => {
@@ -54,5 +61,16 @@ exports.CreatePost = functions.https.onRequest((request, response) => {
   // riderO
   database.ref("RideOffer/").push({rideOffermockData})
   response.send("DONE");
+=======
+var database = admin.database();
+
+exports.PolyRideShareAPI = functions.https.onRequest((request, response) => {
+	// var rideOfferRef = database.ref();
+
+	// Put mock data to the firebase realtime database
+	// riderO
+	database.ref("RideOffer/").push({rideOffermockData})
+	response.send("DONE");
+>>>>>>> d89c764a7d51d97037197ae653ce5712df08a409
 
 })

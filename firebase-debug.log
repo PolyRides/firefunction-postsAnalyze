@@ -1,0 +1,34 @@
+[debug] [2018-04-17T22:16:02.697Z] ----------------------------------------------------------------------
+[debug] [2018-04-17T22:16:02.700Z] Command:       /Users/wenminhe/.nvm/versions/node/v6.11.5/bin/node /usr/local/bin/firebase serve --only functions
+[debug] [2018-04-17T22:16:02.700Z] CLI Version:   3.18.4
+[debug] [2018-04-17T22:16:02.700Z] Platform:      darwin
+[debug] [2018-04-17T22:16:02.700Z] Node Version:  v6.11.5
+[debug] [2018-04-17T22:16:02.701Z] Time:          Tue Apr 17 2018 15:16:02 GMT-0700 (PDT)
+[debug] [2018-04-17T22:16:02.701Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2018-04-17T22:16:02.714Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2018-04-17T22:16:02.714Z] > authorizing via signed-in user
+[debug] [2018-04-17T22:16:02.716Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/polyrideshare-e26d1  
+  
+ Tue Apr 17 2018 15:16:02 GMT-0700 (PDT)
+[debug] [2018-04-17T22:16:03.085Z] <<< HTTP RESPONSE 200
+[debug] [2018-04-17T22:16:03.086Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/polyrideshare-e26d1/tokens  
+  
+ Tue Apr 17 2018 15:16:03 GMT-0700 (PDT)
+[debug] [2018-04-17T22:16:03.471Z] <<< HTTP RESPONSE 200
+[debug] [2018-04-17T22:16:03.473Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/polyrideshare-e26d1  
+  
+ Tue Apr 17 2018 15:16:03 GMT-0700 (PDT)
+[debug] [2018-04-17T22:16:03.838Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from '/Users/wenminhe/git/polyRideShareAPI'...
+[info] 
+[info] i  functions: Preparing to emulate functions.
+[debug] [2018-04-17T22:16:04.430Z] Fetching environment
+[debug] [2018-04-17T22:16:04.432Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/591854984542:getServerAppConfig  
+  
+ Tue Apr 17 2018 15:16:04 GMT-0700 (PDT)
+[debug] [2018-04-17T22:16:04.694Z] <<< HTTP RESPONSE 200
+[debug] [2018-04-17T22:16:04.694Z] Starting @google-cloud/functions-emulator
+[debug] [2018-04-17T22:16:04.743Z] Parsing function triggers
+[info] ✔  functions: PolyRideShareAPI: http://localhost:5000/polyrideshare-e26d1/us-central1/PolyRideShareAPI
