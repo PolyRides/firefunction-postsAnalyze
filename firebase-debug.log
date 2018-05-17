@@ -1,34 +1,203 @@
-[debug] [2018-04-17T22:16:02.697Z] ----------------------------------------------------------------------
-[debug] [2018-04-17T22:16:02.700Z] Command:       /Users/wenminhe/.nvm/versions/node/v6.11.5/bin/node /usr/local/bin/firebase serve --only functions
-[debug] [2018-04-17T22:16:02.700Z] CLI Version:   3.18.4
-[debug] [2018-04-17T22:16:02.700Z] Platform:      darwin
-[debug] [2018-04-17T22:16:02.700Z] Node Version:  v6.11.5
-[debug] [2018-04-17T22:16:02.701Z] Time:          Tue Apr 17 2018 15:16:02 GMT-0700 (PDT)
-[debug] [2018-04-17T22:16:02.701Z] ----------------------------------------------------------------------
+[debug] [2018-05-17T06:41:38.403Z] ----------------------------------------------------------------------
+[debug] [2018-05-17T06:41:38.405Z] Command:       /usr/local/Cellar/node/9.11.1/bin/node /usr/local/bin/firebase deploy
+[debug] [2018-05-17T06:41:38.405Z] CLI Version:   3.18.4
+[debug] [2018-05-17T06:41:38.405Z] Platform:      darwin
+[debug] [2018-05-17T06:41:38.405Z] Node Version:  v9.11.1
+[debug] [2018-05-17T06:41:38.406Z] Time:          Wed May 16 2018 23:41:38 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:38.406Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2018-04-17T22:16:02.714Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2018-04-17T22:16:02.714Z] > authorizing via signed-in user
-[debug] [2018-04-17T22:16:02.716Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/polyrideshare-e26d1  
+[debug] [2018-05-17T06:41:38.418Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2018-05-17T06:41:38.418Z] > authorizing via signed-in user
+[debug] [2018-05-17T06:41:38.420Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/postsanalyze-e5c20  
   
- Tue Apr 17 2018 15:16:02 GMT-0700 (PDT)
-[debug] [2018-04-17T22:16:03.085Z] <<< HTTP RESPONSE 200
-[debug] [2018-04-17T22:16:03.086Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/polyrideshare-e26d1/tokens  
+ Wed May 16 2018 23:41:38 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:39.039Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:39.040Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/postsanalyze-e5c20/tokens  
   
- Tue Apr 17 2018 15:16:03 GMT-0700 (PDT)
-[debug] [2018-04-17T22:16:03.471Z] <<< HTTP RESPONSE 200
-[debug] [2018-04-17T22:16:03.473Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/polyrideshare-e26d1  
-  
- Tue Apr 17 2018 15:16:03 GMT-0700 (PDT)
-[debug] [2018-04-17T22:16:03.838Z] <<< HTTP RESPONSE 200
+ Wed May 16 2018 23:41:39 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:39.471Z] <<< HTTP RESPONSE 200
 [info] 
-[info] === Serving from '/Users/wenminhe/git/polyRideShareAPI'...
+[info] === Deploying to 'postsanalyze-e5c20'...
 [info] 
-[info] i  functions: Preparing to emulate functions.
-[debug] [2018-04-17T22:16:04.430Z] Fetching environment
-[debug] [2018-04-17T22:16:04.432Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/591854984542:getServerAppConfig  
+[info] i  deploying functions
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint
+[info] ✔  functions: Finished running predeploy script.
+[debug] [2018-05-17T06:41:44.163Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "lint": "eslint .",
+    "serve": "firebase serve --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "~5.12.0",
+    "firebase-functions": "^1.0.1",
+    "natural": "^0.5.6",
+    "request": "^2.85.0",
+    "required": "^1.0.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "eslint": "^4.12.0",
+    "eslint-plugin-promise": "^3.6.0"
+  },
+  "private": true
+}
+[info] i  functions: ensuring necessary APIs are enabled...
+[debug] [2018-05-17T06:41:44.163Z] >>> HTTP REQUEST GET https://servicemanagement.googleapis.com/v1/services/cloudfunctions.googleapis.com/projectSettings/postsanalyze-e5c20?view=CONSUMER_VIEW  
   
- Tue Apr 17 2018 15:16:04 GMT-0700 (PDT)
-[debug] [2018-04-17T22:16:04.694Z] <<< HTTP RESPONSE 200
-[debug] [2018-04-17T22:16:04.694Z] Starting @google-cloud/functions-emulator
-[debug] [2018-04-17T22:16:04.743Z] Parsing function triggers
-[info] ✔  functions: PolyRideShareAPI: http://localhost:5000/polyrideshare-e26d1/us-central1/PolyRideShareAPI
+ Wed May 16 2018 23:41:44 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:44.164Z] >>> HTTP REQUEST GET https://servicemanagement.googleapis.com/v1/services/runtimeconfig.googleapis.com/projectSettings/postsanalyze-e5c20?view=CONSUMER_VIEW  
+  
+ Wed May 16 2018 23:41:44 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:45.013Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:45.137Z] <<< HTTP RESPONSE 200
+[info] ✔  functions: all necessary APIs are enabled
+[debug] [2018-05-17T06:41:45.138Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/postsanalyze-e5c20  
+  
+ Wed May 16 2018 23:41:45 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:45.584Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:45.585Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/1061645563118:getServerAppConfig  
+  
+ Wed May 16 2018 23:41:45 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:46.135Z] <<< HTTP RESPONSE 200
+[info] i  functions: preparing functions directory for uploading...
+[debug] [2018-05-17T06:41:46.136Z] >>> HTTP REQUEST GET https://runtimeconfig.googleapis.com/v1beta1/projects/postsanalyze-e5c20/configs  
+  
+ Wed May 16 2018 23:41:46 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:46.516Z] <<< HTTP RESPONSE 200
+[info] i  functions: packaged functions (65.88 KB) for uploading
+[debug] [2018-05-17T06:41:47.216Z] >>> HTTP REQUEST POST https://cloudfunctions.googleapis.com/v1/projects/postsanalyze-e5c20/locations/us-central1/functions:generateUploadUrl  
+  
+ Wed May 16 2018 23:41:47 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:47.656Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:47.657Z] >>> HTTP REQUEST PUT https://storage.googleapis.com/gcf-upload-us-central1-41aa8933-4ef8-46e9-ade1-de0f82f68113/b67a6ed6-468d-4a1d-85f3-a92c05024979.zip?GoogleAccessId=1061645563118@cloudservices.gserviceaccount.com&Expires=1526541107&Signature=ICTnlJa44SclbQevNzsmzV%2F98uWjCgZf30iGIKtZfPZ%2FEoXK2oDH2stAsLLlrpHotjPGAB9VGDiSaD8qsnrFY7N2%2FsERGueMuA%2F3KdYmXQEboO9kHXeyPUH4x0X0%2ByDFkKs8x%2BlNDWewwoi2HB%2FawJrcO36EkSUOPWHP6eCaMm%2BMxhMln4UOVOj7dM98VZJ3QVZY4h4zOIIrYeNlbRCJsIJOTKU78eFYQG9Qr9mDMDsY5uue%2B7BpzKlw5bqoagao26ucDvy9Mgyxfk8yVCKnUSa0HialltEf3C9XD%2Fdm0SL4ajK6Gf51XD6tNUXRgpkd11TbuYYakvqjEqSZMXpfKg%3D%3D  
+ ReadStream {
+  _readableState: 
+   ReadableState {
+     objectMode: false,
+     highWaterMark: 65536,
+     buffer: BufferList { head: [Object], tail: [Object], length: 1 },
+     length: 65536,
+     pipes: null,
+     pipesCount: 0,
+     flowing: null,
+     ended: false,
+     endEmitted: false,
+     reading: false,
+     sync: false,
+     needReadable: false,
+     emittedReadable: true,
+     readableListening: false,
+     resumeScheduled: false,
+     destroyed: false,
+     defaultEncoding: 'utf8',
+     awaitDrain: 0,
+     readingMore: false,
+     decoder: null,
+     encoding: null },
+  readable: true,
+  domain: null,
+  _events: { end: [Function] },
+  _eventsCount: 1,
+  _maxListeners: undefined,
+  path: '/var/folders/kx/8474jrw91pvg1l3gww4wc2yr0000gp/T/firebase-functions-6762V1vDyJ2rLXoQ.zip',
+  fd: 20,
+  flags: 'r',
+  mode: 438,
+  start: undefined,
+  end: Infinity,
+  autoClose: true,
+  pos: undefined,
+  bytesRead: 65536,
+  closed: false } 
+ Wed May 16 2018 23:41:47 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:48.363Z] <<< HTTP RESPONSE 200
+[info] ✔  functions: functions folder uploaded successfully
+[debug] [2018-05-17T06:41:48.365Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/projects/postsanalyze-e5c20/locations/us-central1/functions  
+  
+ Wed May 16 2018 23:41:48 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:48.694Z] <<< HTTP RESPONSE 200
+[info] i  functions: updating function ProcessCreatedPosts...
+[debug] [2018-05-17T06:41:48.696Z] Trigger is:  {"eventTrigger":{"resource":"projects/_/instances/postsanalyze-e5c20/refs/Posts","eventType":"providers/google.firebase.database/eventTypes/ref.create","service":"firebaseio.com"}}
+[info] i  functions: updating function ProcessUpdatedPosts...
+[debug] [2018-05-17T06:41:48.697Z] Trigger is:  {"eventTrigger":{"resource":"projects/_/instances/postsanalyze-e5c20/refs/Posts","eventType":"providers/google.firebase.database/eventTypes/ref.update","service":"firebaseio.com"}}
+[info] i  functions: updating function QueryPostAPI...
+[debug] [2018-05-17T06:41:48.698Z] Trigger is:  {"httpsTrigger":{}}
+[debug] [2018-05-17T06:41:48.700Z] >>> HTTP REQUEST PATCH https://cloudfunctions.googleapis.com/v1/projects/postsanalyze-e5c20/locations/us-central1/functions/ProcessCreatedPosts 
+query params: {"updateMask":"sourceUploadUrl,name,labels,eventTrigger.resource,eventTrigger.eventType,eventTrigger.service"} 
+ { sourceUploadUrl: 'https://storage.googleapis.com/gcf-upload-us-central1-41aa8933-4ef8-46e9-ade1-de0f82f68113/b67a6ed6-468d-4a1d-85f3-a92c05024979.zip?GoogleAccessId=1061645563118@cloudservices.gserviceaccount.com&Expires=1526541107&Signature=ICTnlJa44SclbQevNzsmzV%2F98uWjCgZf30iGIKtZfPZ%2FEoXK2oDH2stAsLLlrpHotjPGAB9VGDiSaD8qsnrFY7N2%2FsERGueMuA%2F3KdYmXQEboO9kHXeyPUH4x0X0%2ByDFkKs8x%2BlNDWewwoi2HB%2FawJrcO36EkSUOPWHP6eCaMm%2BMxhMln4UOVOj7dM98VZJ3QVZY4h4zOIIrYeNlbRCJsIJOTKU78eFYQG9Qr9mDMDsY5uue%2B7BpzKlw5bqoagao26ucDvy9Mgyxfk8yVCKnUSa0HialltEf3C9XD%2Fdm0SL4ajK6Gf51XD6tNUXRgpkd11TbuYYakvqjEqSZMXpfKg%3D%3D',
+  name: 'projects/postsanalyze-e5c20/locations/us-central1/functions/ProcessCreatedPosts',
+  labels: { 'deployment-tool': 'cli-firebase' },
+  eventTrigger: 
+   { resource: 'projects/_/instances/postsanalyze-e5c20/refs/Posts',
+     eventType: 'providers/google.firebase.database/eventTypes/ref.create',
+     service: 'firebaseio.com' } } 
+ Wed May 16 2018 23:41:48 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:48.702Z] >>> HTTP REQUEST PATCH https://cloudfunctions.googleapis.com/v1/projects/postsanalyze-e5c20/locations/us-central1/functions/ProcessUpdatedPosts 
+query params: {"updateMask":"sourceUploadUrl,name,labels,eventTrigger.resource,eventTrigger.eventType,eventTrigger.service"} 
+ { sourceUploadUrl: 'https://storage.googleapis.com/gcf-upload-us-central1-41aa8933-4ef8-46e9-ade1-de0f82f68113/b67a6ed6-468d-4a1d-85f3-a92c05024979.zip?GoogleAccessId=1061645563118@cloudservices.gserviceaccount.com&Expires=1526541107&Signature=ICTnlJa44SclbQevNzsmzV%2F98uWjCgZf30iGIKtZfPZ%2FEoXK2oDH2stAsLLlrpHotjPGAB9VGDiSaD8qsnrFY7N2%2FsERGueMuA%2F3KdYmXQEboO9kHXeyPUH4x0X0%2ByDFkKs8x%2BlNDWewwoi2HB%2FawJrcO36EkSUOPWHP6eCaMm%2BMxhMln4UOVOj7dM98VZJ3QVZY4h4zOIIrYeNlbRCJsIJOTKU78eFYQG9Qr9mDMDsY5uue%2B7BpzKlw5bqoagao26ucDvy9Mgyxfk8yVCKnUSa0HialltEf3C9XD%2Fdm0SL4ajK6Gf51XD6tNUXRgpkd11TbuYYakvqjEqSZMXpfKg%3D%3D',
+  name: 'projects/postsanalyze-e5c20/locations/us-central1/functions/ProcessUpdatedPosts',
+  labels: { 'deployment-tool': 'cli-firebase' },
+  eventTrigger: 
+   { resource: 'projects/_/instances/postsanalyze-e5c20/refs/Posts',
+     eventType: 'providers/google.firebase.database/eventTypes/ref.update',
+     service: 'firebaseio.com' } } 
+ Wed May 16 2018 23:41:48 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:48.702Z] >>> HTTP REQUEST PATCH https://cloudfunctions.googleapis.com/v1/projects/postsanalyze-e5c20/locations/us-central1/functions/QueryPostAPI 
+query params: {"updateMask":"sourceUploadUrl,name,labels,httpsTrigger"} 
+ { sourceUploadUrl: 'https://storage.googleapis.com/gcf-upload-us-central1-41aa8933-4ef8-46e9-ade1-de0f82f68113/b67a6ed6-468d-4a1d-85f3-a92c05024979.zip?GoogleAccessId=1061645563118@cloudservices.gserviceaccount.com&Expires=1526541107&Signature=ICTnlJa44SclbQevNzsmzV%2F98uWjCgZf30iGIKtZfPZ%2FEoXK2oDH2stAsLLlrpHotjPGAB9VGDiSaD8qsnrFY7N2%2FsERGueMuA%2F3KdYmXQEboO9kHXeyPUH4x0X0%2ByDFkKs8x%2BlNDWewwoi2HB%2FawJrcO36EkSUOPWHP6eCaMm%2BMxhMln4UOVOj7dM98VZJ3QVZY4h4zOIIrYeNlbRCJsIJOTKU78eFYQG9Qr9mDMDsY5uue%2B7BpzKlw5bqoagao26ucDvy9Mgyxfk8yVCKnUSa0HialltEf3C9XD%2Fdm0SL4ajK6Gf51XD6tNUXRgpkd11TbuYYakvqjEqSZMXpfKg%3D%3D',
+  name: 'projects/postsanalyze-e5c20/locations/us-central1/functions/QueryPostAPI',
+  labels: { 'deployment-tool': 'cli-firebase' },
+  httpsTrigger: {} } 
+ Wed May 16 2018 23:41:48 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:49.073Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:49.074Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:49.076Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:49.078Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/projects/postsanalyze-e5c20/locations/us-central1/functions  
+  
+ Wed May 16 2018 23:41:49 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:49.388Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:49.391Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/cG9zdHNhbmFseXplLWU1YzIwL3VzLWNlbnRyYWwxL1Byb2Nlc3NDcmVhdGVkUG9zdHMvMHJVU19VUFNRazQ  
+  
+ Wed May 16 2018 23:41:49 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:49.392Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/cG9zdHNhbmFseXplLWU1YzIwL3VzLWNlbnRyYWwxL1Byb2Nlc3NVcGRhdGVkUG9zdHMvM0MxWkU0Rjdvd2M  
+  
+ Wed May 16 2018 23:41:49 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:49.392Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/cG9zdHNhbmFseXplLWU1YzIwL3VzLWNlbnRyYWwxL1F1ZXJ5UG9zdEFQSS80d3gzVHllQnN2TQ  
+  
+ Wed May 16 2018 23:41:49 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:49.688Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:49.712Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:49.713Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:51.688Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/cG9zdHNhbmFseXplLWU1YzIwL3VzLWNlbnRyYWwxL1Byb2Nlc3NVcGRhdGVkUG9zdHMvM0MxWkU0Rjdvd2M  
+  
+ Wed May 16 2018 23:41:51 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:51.714Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/cG9zdHNhbmFseXplLWU1YzIwL3VzLWNlbnRyYWwxL1F1ZXJ5UG9zdEFQSS80d3gzVHllQnN2TQ  
+  
+ Wed May 16 2018 23:41:51 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:51.714Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/cG9zdHNhbmFseXplLWU1YzIwL3VzLWNlbnRyYWwxL1Byb2Nlc3NDcmVhdGVkUG9zdHMvMHJVU19VUFNRazQ  
+  
+ Wed May 16 2018 23:41:51 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:52.032Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:52.033Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:52.038Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:54.035Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/cG9zdHNhbmFseXplLWU1YzIwL3VzLWNlbnRyYWwxL1Byb2Nlc3NDcmVhdGVkUG9zdHMvMHJVU19VUFNRazQ  
+  
+ Wed May 16 2018 23:41:54 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:54.035Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/cG9zdHNhbmFseXplLWU1YzIwL3VzLWNlbnRyYWwxL1Byb2Nlc3NVcGRhdGVkUG9zdHMvM0MxWkU0Rjdvd2M  
+  
+ Wed May 16 2018 23:41:54 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:54.039Z] >>> HTTP REQUEST GET https://cloudfunctions.googleapis.com/v1/operations/cG9zdHNhbmFseXplLWU1YzIwL3VzLWNlbnRyYWwxL1F1ZXJ5UG9zdEFQSS80d3gzVHllQnN2TQ  
+  
+ Wed May 16 2018 23:41:54 GMT-0700 (PDT)
+[debug] [2018-05-17T06:41:54.329Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:54.338Z] <<< HTTP RESPONSE 200
+[debug] [2018-05-17T06:41:54.345Z] <<< HTTP RESPONSE 200

@@ -20,7 +20,8 @@ classifier.train();
 // Database connection
 var database = admin.database();
 
-var postsExternalIdArray = [];
+var latestPostID = null;
+// postsExternalIdArray
 var postsInternalIdArray = [];
 var processedPostsIdArray = [];
 
@@ -70,7 +71,8 @@ exports.ProcessCreatedPosts = functions.database.ref('/Posts')
 
           // Handling the deletion and addition of the data
           processedPostsIdArray.push(key);
-          snapshot.ref.child(key).remove()
+          // Will change this based on the architecture design, but for now just not deleting the messages, but storing them
+          // snapshot.ref.child(key).remove()
 
           // Post to the RideOffer Collections
           return snapshot.ref.parent.child('RideOffer/').push(object)
@@ -81,28 +83,31 @@ exports.ProcessCreatedPosts = functions.database.ref('/Posts')
 
 
 
-// // Posts analyze firebase function when Posts are updated
-// exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
-//     .onUpdate(snapshot => {   
+// Posts analyze firebase function when Posts are updated
+exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
+    .onUpdate(snapshot => {   
 
-//       // Edit value whenever there is a change
-//       const original = snapshot.change.val();
-//       console.log(processedPostsIdArray, " <<< is the original value")
-//       for(var key in original) {
-//         // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
+      // Edit value whenever there is a change
+      const original = snapshot.before.val();
+      const newVal = snapshot.after.val();
+      console.log("original", original);
+      console.log("newVal: ", newVal);
+      for(var key in newVal) {
+        // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
 
-//         if (!processedPostsIdArray.includes(key) && (!postsInternalIdArray.includes(key) || !postsInternalIdArray.length)) {
-//           var message = original[key]["message"]
-//           var object = compute(message, key);
+        if (!processedPostsIdArray.includes(key) && (!postsInternalIdArray.includes(key) || !postsInternalIdArray.length)) {
+          var message = original[key]["message"]
+          var object = processInfo(message, key);
 
-//           processedPostsIdArray.push(key);
-//           snapshot.change.ref.child(key).remove()
-//           // Post to the RideOffer Collections
-//           return snapshot.change.ref.parent.child('RideOffer/').push(object)
-//         }
-//       }
-//       return null;
-//     });
+          processedPostsIdArray.push(key);
+          // Same as the onCreate, do not want to call remove, since it will trigger more onUpdate function whenever there is a change
+          // snapshot.change.ref.child(key).remove()
+          // Post to the RideOffer Collections
+          return snapshot.change.before.ref.parent.child('RideOffer/').push(object);
+        }
+      }
+      return null;
+    });
 
 
 // Calls the API to actually gets the posts information and add that posts information into posts collection in the database
@@ -120,7 +125,7 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
         postId = post["id"]; 
         
         // Only add new posts
-        if (!postsExternalIdArray.includes(postId)) {
+        if (latestPostID !== postId) {
           // Gets the value references
           var newPostRef = database.ref("Posts/").push({
           // Gets all of the required fields
@@ -129,14 +134,16 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
             message: post["message"]
           });
 
-          // Put new item to the postsIdArray to be tracked
-          postsExternalIdArray.push(postId);
+          // Gets the latestPostID
+          latestPostID = postId;
           postsInternalIdArray.push(newPostRef.key);
+        } else {
+          response.send({postids: postsInternalIdArray, processed: processedPostsIdArray, externalIDs: latestPostID});
+          response.end();
+          return;
         }
+        response.end();
       })
-      
-      response.send({postids: postsInternalIdArray, processed: processedPostsIdArray, externalIDs: postsExternalIdArray});
-      response.end();
     } else {
       response.statusCode = 404;
       response.end();
