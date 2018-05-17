@@ -60,7 +60,7 @@ exports.ProcessCreatedPosts = functions.database.ref('/Posts')
 
       // Edit value whenever there is a change
       const original = snapshot.val();
-      console.log(processedPostsIdArray, " <<< is the original value")
+      console.log(original, " <<< is the original value")
       for(var key in original) {
         // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
 
