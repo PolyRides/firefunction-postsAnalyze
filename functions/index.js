@@ -9,6 +9,7 @@ var req = require('request');
 // Initializer
 var tokenizer = new natural.WordTokenizer();
 var classifier = new natural.BayesClassifier();
+let firstTime = true;
 
 // Training Data
 classifier.addDocument('Offering  SLO -> SB Tomorrow (Friday) at 5 Returning Saturday afternoon', 'Ride Offer');
@@ -60,25 +61,25 @@ exports.ProcessCreatedPosts = functions.database.ref('/Posts')
 
       // Edit value whenever there is a change
       const original = snapshot.val();
+      // const original = snapshot.data.val();
       console.log(original, " <<< is the original value")
-      for(var key in original) {
+      Object.keys(original).forEach(key => {
+      // for(var key in original) {
         // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
+        var post = original[key];
+        console.log("key: ", key, " post:", post);
+        var message = post["message"];
+        var postId = post["id"];
+        console.log("message: ", message)
+        var object = processInfo(message, postId);
 
-        if (!processedPostsIdArray.includes(key)) {
-          // && (!postsInternalIdArray.includes(key) || !postsInternalIdArray.length)) {
-          var message = original[key]["message"];
-          var object = processInfo(message, key);
-
-          // Handling the deletion and addition of the data
-          processedPostsIdArray.push(key);
-          // Will change this based on the architecture design, but for now just not deleting the messages, but storing them
-          // snapshot.ref.child(key).remove()
-
-          // Post to the RideOffer Collections
-          return snapshot.ref.parent.child('RideOffer/').push(object)
-        }
-      }
-      return null;
+        // Handling the deletion and addition of the data
+        processedPostsIdArray.push(postId);
+        // Will change this based on the architecture design, but for now just not deleting the messages, but storing them
+        // Post to the RideOffer Collections
+        return snapshot.ref.parent.child('RideOffer/').push(object)
+      })
+      // return null;
     });
 
 
@@ -95,7 +96,6 @@ exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
       for(var key in newVal) {
         // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
 
-        if (!processedPostsIdArray.includes(key) && (!postsInternalIdArray.includes(key) || !postsInternalIdArray.length)) {
           var message = original[key]["message"]
           var object = processInfo(message, key);
 
@@ -104,51 +104,65 @@ exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
           // snapshot.change.ref.child(key).remove()
           // Post to the RideOffer Collections
           return snapshot.before.ref.parent.child('RideOffer/').push(object);
-        }
       }
       return null;
     });
 
+// As name implies, this function push the data into the firebase realtime database
+var pushToFireBase = (path, jsonObject, handlerFunction) => {
+  var postReference = database.ref(path).push({
+    created_time: jsonObject["created_time"],
+    message: jsonObject["message"],
+    id: jsonObject["id"],
+  }, handlerFunction)
+  return postReference;
+}
+
+// Compare the latestPostID and push to the database accordingly
+var idComp = (post) => {
+  let postId = post["id"];
+  if (latestPostID !== postId) {
+    latestPostID = postId;
+    pushToFireBase("Posts/", post);
+  }
+}
 
 // Calls the API to actually gets the posts information and add that posts information into posts collection in the database
 exports.QueryPostAPI = functions.https.onRequest((request, response) => {
-  req('https://us-central1-posts-6706e.cloudfunctions.net/restAPI', function (error, resp, body) {
+  req('https://us-central1-posts-6706e.cloudfunctions.net/restAPI', (error, resp, body) => {
     if (!error && response.statusCode === 200) {
       response.setHeader('Content-Type', 'application/json');
-
       // Push posts to the Posts collections
       // Parse data
-      posts = JSON.parse(body);
-      // Post data
-      posts.data.map(post => {
-        
-        postId = post["id"]; 
-        
-        // Only add new posts
-        if (latestPostID !== postId) {
-          // Gets the value references
-          var newPostRef = database.ref("Posts/").push({
-          // Gets all of the required fields
-            created_time: post["created_time"],
-            id: postId,
-            message: post["message"]
-          });
+      let posts = JSON.parse(body).data;
 
-          // Gets the latestPostID
-          latestPostID = postId;
-          postsInternalIdArray.push(newPostRef.key);
-        } else {
-          response.send({postids: postsInternalIdArray, processed: processedPostsIdArray, externalIDs: latestPostID});
-          response.end();
-          return;
+      // Go from button to top on the first time
+      if (firstTime) {
+        let idx;
+        for (idx = posts.length - 1; idx >= 0; idx--) {
+          let post = posts[idx];
+          idComp(post);
         }
-        response.end();
-      })
-    } else {
-      response.statusCode = 404;
+        firstTime = false;
+      } 
+      // Otherwise go from top to button
+      else {
+        var idx;
+        for (idx = 0; idx < posts.length; idx++) {
+          let post = posts[idx];
+          let postId = post["id"];
+          latestPostID = postId;
+          if (latestPostID !== postId) {
+            idComp(post);
+          }
+          else {
+            response.end();
+            return;
+          }
+        }
+      }
+      // Return in the end
+      response.send({postids: latestPostID});
       response.end();
-    }
-
-    // response.send("DONE");
-  });
-});
+    }}
+  )});
