@@ -103,7 +103,7 @@ exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
           // Same as the onCreate, do not want to call remove, since it will trigger more onUpdate function whenever there is a change
           // snapshot.change.ref.child(key).remove()
           // Post to the RideOffer Collections
-          return snapshot.change.before.ref.parent.child('RideOffer/').push(object);
+          return snapshot.before.ref.parent.child('RideOffer/').push(object);
         }
       }
       return null;
