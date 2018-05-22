@@ -95,7 +95,7 @@ exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
       console.log("newVal: ", newVal);
       for(var key in newVal) {
         // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
-
+          console.log("key: ", key);
           var message = original[key]["message"]
           var object = processInfo(message, key);
 
@@ -166,3 +166,10 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
       response.end();
     }}
   )});
+
+// Triggers when a new ride offer is posted
+// It will notify people with the profile setting with the exact rider offer request
+exports.sendMatchingRideNotification = functions.database.ref('/RideOffer')
+  .onWrite((change, context) => {
+    console.log("change: ", change, " ---- context: ", context);
+  })
