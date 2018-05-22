@@ -21,8 +21,8 @@ classifier.train();
 // Database connection
 var database = admin.database();
 
+// Variable keeps track of the post
 var latestPostID = null;
-// postsExternalIdArray
 var postsInternalIdArray = [];
 var processedPostsIdArray = [];
 
@@ -41,10 +41,12 @@ cost: 20,
 description: "This is a ride"
 }
 
-
-
-// Compute function is handling the main logics of NLP
-// Returns the processed result back
+/**
+ * Handles the main logics of NLP
+ * @param {string} message - The post string from facebook post
+ * @param {string} uid - The unique id associated with the firebase collection(firebase collection uid)
+ * @return {object} json object with classification result and token array with a referenceID for the uid
+//  */
 let processInfo = function(message, uid) {
   var tokenizedResult = tokenizer.tokenize(message);
   var classifyResult = classifier.classify(message);

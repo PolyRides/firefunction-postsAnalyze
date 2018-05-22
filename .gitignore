@@ -2,6 +2,7 @@
 .npm
 .tmp
 .vscode/
+firebase-debug.log
 coverage
 firebase-functions-*.tgz
 integration_test/.firebaserc
