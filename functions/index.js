@@ -1,4 +1,6 @@
-// Packages
+/**
+ * packages and libraries
+ */
 const functions = require('firebase-functions');
 var admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
@@ -6,9 +8,21 @@ var natural = require('natural');
 var req = require('request');
 
 
-// Initializer
+/**
+ * tokenizer is the function variable references the natural.WordTokenizer()
+ * @type {function} - function reference
+ */
 var tokenizer = new natural.WordTokenizer();
+
+/**
+ * classifier is the function variable references the natural.BayesClassifier()
+ * @type {function} - function reference
+ */
 var classifier = new natural.BayesClassifier();
+
+/**
+ * This is a static variable keep track of whether it is the first time for the function to be excuted
+ */
 let firstTime = true;
 
 // Training Data
@@ -23,11 +37,10 @@ var database = admin.database();
 
 // Variable keeps track of the post
 var latestPostID = null;
-var postsInternalIdArray = [];
 var processedPostsIdArray = [];
 
 
-// Mock data
+// The Mock data
 const rideOffermockData = {
 origin: "San Luis Obispo, CA", 
 originLat: 35.30199,
@@ -55,12 +68,32 @@ let processInfo = function(message, uid) {
     Token: tokenizedResult,
     ReferenceId: uid
   }
+  console.log("result: ", result)
   return result;
 }
+
+exports.ProcessNewPosts = functions.database.ref('/Posts')
+  .onWrite((change, context) => {
+    // Don't care when the posts are first created
+    if (change.before.exists()) {
+      return null;
+    }
+    // Don't care when the posts are deleted
+    if (change.after.exists()) {
+      return null;
+    }
+
+    // otherwise, when the posts are updated, push the data
+    const original = change.after.val();
+    console.log("original value: ", original);
+    let jsonReference = processInfo(original, "12343234324233423");
+    return change.after.ref.parent.child("RideOffer2").set(jsonReference)
+  })
+
 // Posts analyze firebase function when Posts are updated
 exports.ProcessCreatedPosts = functions.database.ref('/Posts')
     .onCreate(snapshot => {   
-
+      console.log("comes to the processed created posts -------");
       // Edit value whenever there is a change
       const original = snapshot.val();
       // const original = snapshot.data.val();
@@ -76,25 +109,36 @@ exports.ProcessCreatedPosts = functions.database.ref('/Posts')
         var object = processInfo(message, postId);
 
         // Handling the deletion and addition of the data
-        processedPostsIdArray.push(postId);
+        processedPostsIdArray.push(key);
         // Will change this based on the architecture design, but for now just not deleting the messages, but storing them
         // Post to the RideOffer Collections
         return snapshot.ref.parent.child('RideOffer/').push(object)
       })
-      // return null;
+      console.log("processedPostsIdArray: ", processedPostsIdArray);
+      return null;
     });
 
 
 
-// Posts analyze firebase function when Posts are updated
+/**
+ * This function is triggered whenever there is new posts on the /Posts collection from firebase real time database
+ * @param  {object} snapshot - is the data from real-time databse
+ * @returns {newChild | null} - either adding the analyzed post to the RiderOffer collection or skipping the post
+ */
 exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
     .onUpdate(snapshot => {   
+      console.log("comes to the processed update posts <<<<<<<<<")
+      console.log("processedPostsIdArray on the post arrary: ", processedPostsIdArray)
 
-      // Edit value whenever there is a change
-      const original = snapshot.before.val();
+      // Only care about the changed value
       const newVal = snapshot.after.val();
-      console.log("original", original);
       console.log("newVal: ", newVal);
+      for (let key in original) {
+        if (original.hasOwnProperty(key)) {
+          originalIDs.push(key);
+        }
+      }
+      
       for(var key in newVal) {
         // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
           console.log("key: ", key);
@@ -110,7 +154,14 @@ exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
       return null;
     });
 
-// As name implies, this function push the data into the firebase realtime database
+
+/**
+ * This function is pushing the data into the firebase realtime and return a reference of the data pushed
+ * @param  {string} path - path for the firebase collection to be pushed
+ * @param  {object} jsonObject - the facebook post json object from API call
+ * @param  {function} handlerFunction - an optional function for failure handling
+ * @return {object} - a collection reference
+ */
 var pushToFireBase = (path, jsonObject, handlerFunction) => {
   var postReference = database.ref(path).push({
     created_time: jsonObject["created_time"],
@@ -120,7 +171,11 @@ var pushToFireBase = (path, jsonObject, handlerFunction) => {
   return postReference;
 }
 
-// Compare the latestPostID and push to the database accordingly
+
+/**
+ * Compare the latestPostID and push to the database accordingly
+ * @param  {} post
+ */
 var idComp = (post) => {
   let postId = post["id"];
   if (latestPostID !== postId) {
@@ -131,7 +186,7 @@ var idComp = (post) => {
 
 // Calls the API to actually gets the posts information and add that posts information into posts collection in the database
 exports.QueryPostAPI = functions.https.onRequest((request, response) => {
-  req('https://us-central1-posts-6706e.cloudfunctions.net/restAPI', (error, resp, body) => {
+  req('https://us-central1-posts-eb2a3.cloudfunctions.net/restAPI', (error, resp, body) => {
     if (!error && response.statusCode === 200) {
       response.setHeader('Content-Type', 'application/json');
       // Push posts to the Posts collections
@@ -169,9 +224,15 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
     }}
   )});
 
-// Triggers when a new ride offer is posted
-// It will notify people with the profile setting with the exact rider offer request
-exports.sendMatchingRideNotification = functions.database.ref('/RideOffer')
-  .onWrite((change, context) => {
-    console.log("change: ", change, " ---- context: ", context);
-  })
+// // Triggers when a new ride offer is posted
+// // It will notify people with the profile setting with the exact rider offer request
+// exports.sendMatchingRideNotification = functions.database.ref('/RideOffer')
+//   .onWrite((change, context) => {
+//     console.log("change: ", change, " ---- context: ", context);
+//   })
+
+
+exports.deleteOldPosts = functions.https.onRequest((request, response) => {
+  // query the database once and then delete all of the old posts
+  
+});
