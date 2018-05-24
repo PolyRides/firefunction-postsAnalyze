@@ -61,7 +61,8 @@ description: "This is a ride"
  * @return {object} json object with classification result and token array with a referenceID for the uid
 //  */
 let processInfo = function(message, uid) {
-  var tokenizedResult = tokenizer.tokenize(message);
+  console.log("message: ", message, " --- ")
+  var tokenizedResult = tokenizer.tokenize(message);  
   var classifyResult = classifier.classify(message);
   var result = {
     PostStatus: classifyResult,
@@ -72,51 +73,63 @@ let processInfo = function(message, uid) {
   return result;
 }
 
-exports.ProcessNewPosts = functions.database.ref('/Posts')
+exports.ProcessNewPosts = functions.database.ref('/Posts/')
   .onWrite((change, context) => {
-    // Don't care when the posts are first created
-    if (change.before.exists()) {
+    // Don't care about when the posts are first created
+    if (!change.before.exists()) {
       return null;
     }
     // Don't care when the posts are deleted
-    if (change.after.exists()) {
+    if (!change.after.exists()) {
       return null;
     }
-
+    console.log("Comes to the updated posts")
     // otherwise, when the posts are updated, push the data
     const original = change.after.val();
+    
     console.log("original value: ", original);
-    let jsonReference = processInfo(original, "12343234324233423");
-    return change.after.ref.parent.child("RideOffer2").set(jsonReference)
+    Object.keys(original).forEach(key => {
+      console.log("processedPostsIdArray: ", processedPostsIdArray, " ---- key:", key)
+      console.log("has the item: ", processedPostsIdArray.includes(key));
+      if (!processedPostsIdArray.includes(key)) {
+        let reference = original[key];
+        let message = reference["message"];
+        processedPostsIdArray.push(key);
+        console.log("key: ", key, " --- message: ", message);
+        let jsonReference = processInfo(message, key);
+        return pushToFireBase("RideOffer2", jsonReference);
+      }
+    })
+    return null;
   })
 
 // Posts analyze firebase function when Posts are updated
-exports.ProcessCreatedPosts = functions.database.ref('/Posts')
-    .onCreate(snapshot => {   
-      console.log("comes to the processed created posts -------");
-      // Edit value whenever there is a change
-      const original = snapshot.val();
-      // const original = snapshot.data.val();
-      console.log(original, " <<< is the original value")
-      Object.keys(original).forEach(key => {
-      // for(var key in original) {
-        // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
-        var post = original[key];
-        console.log("key: ", key, " post:", post);
-        var message = post["message"];
-        var postId = post["id"];
-        console.log("message: ", message)
-        var object = processInfo(message, postId);
+// exports.ProcessCreatedPosts = functions.database.ref('/Posts')
+//     .onCreate(snapshot => {   
+//       console.log("comes to the processed created posts -------");
+//       // Edit value whenever there is a change
+//       const original = snapshot.val();
+//       // const original = snapshot.data.val();
+//       console.log(original, " <<< is the original value")
+//       Object.keys(original).forEach(key => {
+//       // for(var key in original) {
+//         // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
+//         var post = original[key];
+//         console.log("key: ", key, " post:", post);
+//         var message = post["message"];
+//         var postId = post["id"];
+//         console.log("message: ", message)
+//         var object = processInfo(message, postId);
 
-        // Handling the deletion and addition of the data
-        processedPostsIdArray.push(key);
-        // Will change this based on the architecture design, but for now just not deleting the messages, but storing them
-        // Post to the RideOffer Collections
-        return snapshot.ref.parent.child('RideOffer/').push(object)
-      })
-      console.log("processedPostsIdArray: ", processedPostsIdArray);
-      return null;
-    });
+//         // Handling the deletion and addition of the data
+//         processedPostsIdArray.push(key);
+//         // Will change this based on the architecture design, but for now just not deleting the messages, but storing them
+//         // Post to the RideOffer Collections
+//         return snapshot.ref.parent.child('RideOffer/').push(object)
+//       })
+//       console.log("processedPostsIdArray: ", processedPostsIdArray);
+//       return null;
+//     });
 
 
 
@@ -125,34 +138,34 @@ exports.ProcessCreatedPosts = functions.database.ref('/Posts')
  * @param  {object} snapshot - is the data from real-time databse
  * @returns {newChild | null} - either adding the analyzed post to the RiderOffer collection or skipping the post
  */
-exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
-    .onUpdate(snapshot => {   
-      console.log("comes to the processed update posts <<<<<<<<<")
-      console.log("processedPostsIdArray on the post arrary: ", processedPostsIdArray)
+// exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
+//     .onUpdate(snapshot => {   
+//       console.log("comes to the processed update posts <<<<<<<<<")
+//       console.log("processedPostsIdArray on the post arrary: ", processedPostsIdArray)
 
-      // Only care about the changed value
-      const newVal = snapshot.after.val();
-      console.log("newVal: ", newVal);
-      for (let key in original) {
-        if (original.hasOwnProperty(key)) {
-          originalIDs.push(key);
-        }
-      }
+//       // Only care about the changed value
+//       const newVal = snapshot.after.val();
+//       console.log("newVal: ", newVal);
+//       for (let key in original) {
+//         if (original.hasOwnProperty(key)) {
+//           originalIDs.push(key);
+//         }
+//       }
       
-      for(var key in newVal) {
-        // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
-          console.log("key: ", key);
-          var message = original[key]["message"]
-          var object = processInfo(message, key);
+//       for(var key in newVal) {
+//         // The item processed must be in the postIdArray and not in the processedPostsIdArray to make sure all of the posts are valid and not processed
+//           console.log("key: ", key);
+//           var message = original[key]["message"]
+//           var object = processInfo(message, key);
 
-          processedPostsIdArray.push(key);
-          // Same as the onCreate, do not want to call remove, since it will trigger more onUpdate function whenever there is a change
-          // snapshot.change.ref.child(key).remove()
-          // Post to the RideOffer Collections
-          return snapshot.before.ref.parent.child('RideOffer/').push(object);
-      }
-      return null;
-    });
+//           processedPostsIdArray.push(key);
+//           // Same as the onCreate, do not want to call remove, since it will trigger more onUpdate function whenever there is a change
+//           // snapshot.change.ref.child(key).remove()
+//           // Post to the RideOffer Collections
+//           return snapshot.before.ref.parent.child('RideOffer/').push(object);
+//       }
+//       return null;
+//     });
 
 
 /**
@@ -163,11 +176,7 @@ exports.ProcessUpdatedPosts = functions.database.ref('/Posts')
  * @return {object} - a collection reference
  */
 var pushToFireBase = (path, jsonObject, handlerFunction) => {
-  var postReference = database.ref(path).push({
-    created_time: jsonObject["created_time"],
-    message: jsonObject["message"],
-    id: jsonObject["id"],
-  }, handlerFunction)
+  var postReference = database.ref(path).push(jsonObject, handlerFunction)
   return postReference;
 }
 
@@ -232,7 +241,7 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
 //   })
 
 
-exports.deleteOldPosts = functions.https.onRequest((request, response) => {
-  // query the database once and then delete all of the old posts
-  
-});
+// exports.deleteOldPosts = functions.https.onRequest((request, response) => {
+//   // query the database once and then delete all of the old posts
+
+// });

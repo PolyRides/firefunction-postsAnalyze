@@ -1,0 +1,3 @@
+ProcessNewPosts({"before": {"12321321321": {"message": "string123"}}, "after": {"12321321321": {"message": "string123"}, "1231231231231231232131": {"message": "Stringasdfasdfa"}}})
+ProcessNewPosts({"before": {}, "after": {"12321321321": {"message": "string123"}}})
+ProcessNewPosts({"after": {"12321321321": {"message": "string123"}}})
