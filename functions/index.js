@@ -24,6 +24,7 @@ var classifier = new natural.BayesClassifier();
  * This is a static variable keep track of whether it is the first time for the function to be excuted
  */
 let firstTime = true;
+var db = admin.database();
 
 // Training Data
 classifier.addDocument('Offering  SLO -> SB Tomorrow (Friday) at 5 Returning Saturday afternoon', 'Ride Offer');
@@ -73,8 +74,22 @@ let processInfo = function(message, uid) {
   return result;
 }
 
+var rideOfferRef = db.ref("/RideOffer");
+
 exports.ProcessNewPosts = functions.database.ref('/Posts/')
   .onWrite((change, context) => {
+    // Calling the databse to get the reference of the data from RideOffer
+    rideOfferRef.once("value", (data) => {
+      let value = data.val();
+      console.log("data.val():", value)
+      Object.keys(value).forEach(key => {
+        if (!processedPostsIdArray.includes(key)) {
+          processedPostsIdArray.push(key);
+        }
+      })
+    })
+
+    console.log("processedPostsIdArray:", processedPostsIdArray);
     // Don't care about when the posts are first created
     if (!change.before.exists()) {
       return null;
@@ -188,7 +203,6 @@ var pushToFireBase = (path, jsonObject, handlerFunction) => {
 var idComp = (post) => {
   let postId = post["id"];
   if (latestPostID !== postId) {
-    latestPostID = postId;
     pushToFireBase("Posts/", post);
   }
 }
@@ -214,12 +228,15 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
       // Otherwise go from top to button
       else {
         var idx;
+        console.log("posts: ", posts)
         for (idx = 0; idx < posts.length; idx++) {
           let post = posts[idx];
           let postId = post["id"];
-          latestPostID = postId;
+          console.log("latestPostID: ", latestPostID);
+          console.log("postId: ", postId);
+          
           if (latestPostID !== postId) {
-            idComp(post);
+            pushToFireBase("Posts/", post);
           }
           else {
             response.end();
