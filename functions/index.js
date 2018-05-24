@@ -97,7 +97,7 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
         processedPostsIdArray.push(key);
         console.log("key: ", key, " --- message: ", message);
         let jsonReference = processInfo(message, key);
-        return pushToFireBase("RideOffer2", jsonReference);
+        return pushToFireBase("RideOffer", jsonReference);
       }
     })
     return null;
