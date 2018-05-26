@@ -93,8 +93,9 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
 
     // Only process the newest item in the collection
     let lastItemKey = null;
-    object.keys(original).forEach(element => {
+    Object.keys(original).forEach(element => {
       lastItemKey = element;
+      console.log("lastItemKey: ", lastItemKey);
     });
 
     if (!processedPostsIdArray.includes(lastItemKey)) {
