@@ -62,7 +62,6 @@ description: "This is a ride"
  * @return {object} json object with classification result and token array with a referenceID for the uid
 //  */
 let processInfo = function(message, uid) {
-  console.log("message: ", message, " --- ")
   var tokenizedResult = tokenizer.tokenize(message);  
   var classifyResult = classifier.classify(message);
   var result = {
@@ -70,7 +69,6 @@ let processInfo = function(message, uid) {
     Token: tokenizedResult,
     ReferenceId: uid
   }
-  console.log("result: ", result)
   return result;
 }
 
@@ -79,17 +77,16 @@ var rideOfferRef = db.ref("/RideOffer");
 exports.ProcessNewPosts = functions.database.ref('/Posts/')
   .onWrite((change, context) => {
     // Calling the databse to get the reference of the data from RideOffer
-    rideOfferRef.once("value", (data) => {
-      let value = data.val();
-      console.log("data.val():", value)
-      Object.keys(value).forEach(key => {
-        if (!processedPostsIdArray.includes(key)) {
-          processedPostsIdArray.push(key);
-        }
-      })
-    })
+    // rideOfferRef.once("value", (data) => {
+    //   let value = data.val();
+    //   Object.keys(value).forEach(key => {
+    //     if (!processedPostsIdArray.includes(key)) {
+    //       processedPostsIdArray.push(key);
+    //     }
+    //   })
+    // })
 
-    console.log("processedPostsIdArray:", processedPostsIdArray);
+    // console.log("processedPostsIdArray:", processedPostsIdArray);
     // Don't care about when the posts are first created
     if (!change.before.exists()) {
       return null;
@@ -102,21 +99,24 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
     // otherwise, when the posts are updated, push the data
     const original = change.after.val();
     
-    console.log("original value: ", original);
-    Object.keys(original).forEach(key => {
-      console.log("processedPostsIdArray: ", processedPostsIdArray, " ---- key:", key)
-      console.log("has the item: ", processedPostsIdArray.includes(key));
-      if (!processedPostsIdArray.includes(key)) {
-        let reference = original[key];
-        let message = reference["message"];
-        processedPostsIdArray.push(key);
-        console.log("key: ", key, " --- message: ", message);
-        let jsonReference = processInfo(message, key);
-        return pushToFireBase("RideOffer/", jsonReference);
-      }
-    })
+
+    // Only process the newest item in the collection
+    let lastItemKey = null;
+    object.keys(original).forEach(element => {
+      lastItemKey = element;
+    });
+
+    if (!processedPostsIdArray.includes(lastItemKey)) {
+      let reference = original[lastItemKey];
+      let message = reference["message"];
+      processedPostsIdArray.push(lastItemKey);
+      let jsonReference = processInfo(message, lastItemKey);
+      return pushToFireBase("RideOffer/", jsonReference);
+    }
     return null;
   })
+
+
 
 // Posts analyze firebase function when Posts are updated
 // exports.ProcessCreatedPosts = functions.database.ref('/Posts')
@@ -196,16 +196,6 @@ var pushToFireBase = (path, jsonObject, handlerFunction) => {
 }
 
 
-/**
- * Compare the latestPostID and push to the database accordingly
- * @param  {} post
- */
-var idComp = (post) => {
-  let postId = post["id"];
-  if (latestPostID !== postId) {
-    pushToFireBase("Posts/", post);
-  }
-}
 
 // Calls the API to actually gets the posts information and add that posts information into posts collection in the database
 exports.QueryPostAPI = functions.https.onRequest((request, response) => {
@@ -214,31 +204,38 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
       response.setHeader('Content-Type', 'application/json');
       // Push posts to the Posts collections
       // Parse data
+      console.log("firstTime: ", firstTime);
       let posts = JSON.parse(body).data;
 
       // Go from button to top on the first time
       if (firstTime) {
+        let theId;
         let idx;
         for (idx = posts.length - 1; idx >= 0; idx--) {
           let post = posts[idx];
-          idComp(post);
+          theId = post["id"];
+          pushToFireBase("Posts/", post);
         }
         firstTime = false;
+        latestPostID = theId;
       } 
       // Otherwise go from top to button
       else {
         var idx;
-        console.log("posts: ", posts)
+        // Keep track of the firstID, it is the the most recent one
+        let firstPostID = posts[0]["id"];
         for (idx = 0; idx < posts.length; idx++) {
           let post = posts[idx];
           let postId = post["id"];
-          console.log("latestPostID: ", latestPostID);
-          console.log("postId: ", postId);
           
+          // If the post is not the latestPost, it means new posts are constructed
           if (latestPostID !== postId) {
             pushToFireBase("Posts/", post);
           }
+          // Otherwise, it reaches the last post
           else {
+            latestPostID = firstPostID;
+            response.send({postids: latestPostID});
             response.end();
             return;
           }
