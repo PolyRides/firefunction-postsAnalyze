@@ -76,15 +76,6 @@ var rideOfferRef = db.ref("/RideOffer");
 
 exports.ProcessNewPosts = functions.database.ref('/Posts/')
   .onWrite((change, context) => {
-    // Calling the databse to get the reference of the data from RideOffer
-    // rideOfferRef.once("value", (data) => {
-    //   let value = data.val();
-    //   Object.keys(value).forEach(key => {
-    //     if (!processedPostsIdArray.includes(key)) {
-    //       processedPostsIdArray.push(key);
-    //     }
-    //   })
-    // })
 
     // console.log("processedPostsIdArray:", processedPostsIdArray);
     // Don't care about when the posts are first created
