@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "postsanalyze-69dd1"
+    "default": "postsanalyze-69dd1",
+    "staging": "postsanalyze-69dd1"
   }
 }
