@@ -74,19 +74,17 @@ let processInfo = function(message, uid) {
 
 var rideOfferRef = db.ref("/RideOffer");
 
+
+/**
+ * This process the latest post available in the Posts colletions
+ */
 exports.ProcessNewPosts = functions.database.ref('/Posts/')
   .onWrite((change, context) => {
 
-    // console.log("processedPostsIdArray:", processedPostsIdArray);
-    // Don't care about when the posts are first created
-    if (!change.before.exists()) {
-      return null;
-    }
     // Don't care when the posts are deleted
     if (!change.after.exists()) {
       return null;
     }
-    console.log("Comes to the updated posts")
     // otherwise, when the posts are updated, push the data
     const original = change.after.val();
     
@@ -95,9 +93,9 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
     let lastItemKey = null;
     Object.keys(original).forEach(element => {
       lastItemKey = element;
-      console.log("lastItemKey: ", lastItemKey);
     });
-
+    console.log("processedPostsIdArray: ", processedPostsIdArray);
+    // Update the processedPostsIdArray when id is processed
     if (!processedPostsIdArray.includes(lastItemKey)) {
       let reference = original[lastItemKey];
       let message = reference["message"];
@@ -174,15 +172,125 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
     }}
   )});
 
-// // Triggers when a new ride offer is posted
-// // It will notify people with the profile setting with the exact rider offer request
-// exports.sendMatchingRideNotification = functions.database.ref('/RideOffer')
-//   .onWrite((change, context) => {
-//     console.log("change: ", change, " ---- context: ", context);
-//   })
 
 
-// exports.deleteOldPosts = functions.https.onRequest((request, response) => {
-//   // query the database once and then delete all of the old posts
+// const rideOffermockData = {
+//   origin: "San Luis Obispo, CA", 
+//   originLat: 35.30199,
+//   originLon: -120.66381, 
+//   Destination: "San Jose, CA", // (City, State)
+//   destinationLat: 37.3382,
+//   destinationLon: -121.8863,
+//   departureDate: "04/20/2018 14:00",
+//   seats: 3,
+//   cost: 20,
+//   description: "This is a ride"
+//   }
 
-// });
+/**
+ * Deletes the json collections with the object at key to be older than current time
+ * @param {string} path path to the json collection
+ * @param {string} key the key that references to the dateTime object to be compared eg. departureDate key with in the mock data
+ */
+const deleteCollectionBasedOnTime = function(path, key) {
+  let ref = db.ref("/" + path);
+  ref.once("value", (data) => {
+    // Get the json objects
+    let dataObj = data.val();
+    // Loop through the json objects
+    for (let firebaseKey in dataObj) {
+      // Compare the dateTime value
+      if (dataObj.hasOwnProperty(firebaseKey)) {
+        let item = dataObj[firebaseKey];
+        if (item[key]) {
+          let dateUTC = Date.parse(item[key]);
+          let currenTimeUTC = Date.now();
+          // Remove object if necessary
+          if (dateUTC <  currenTimeUTC) {
+            // console.log("something");
+            ref.child("/"+firebaseKey).remove();
+          }
+        }
+      }
+    }
+  })
+}
+
+exports.deleteOldPosts = functions.https.onRequest((request, response) => {
+  // query the database once and then delete all of the old posts
+  deleteCollectionBasedOnTime("Posts", "created_time");
+  response.send("DONE");
+});
+
+
+
+/**
+ * Triggers when a user gets a new follower and sends a notification.
+ *
+ * Followers add a flag to `/followers/{followedUid}/{followerUid}`.
+ * Users save their device notification tokens to `/users/{followedUid}/notificationTokens/{notificationToken}`.
+ */
+exports.sendFollowerNotification = functions.database.ref('/followers/{followedUid}/{followerUid}')
+    .onWrite((change, context) => {
+      const followerUid = context.params.followerUid;
+      const followedUid = context.params.followedUid;
+      // If un-follow we exit the function.
+      if (!change.after.val()) {
+        return console.log('User ', followerUid, 'un-followed user', followedUid);
+      }
+      console.log('We have a new follower UID:', followerUid, 'for user:', followerUid);
+
+      // Get the list of device notification tokens.
+      const getDeviceTokensPromise = admin.database()
+          .ref(`/users/${followedUid}/notificationTokens`).once('value');
+
+      // Get the follower profile.
+      const getFollowerProfilePromise = admin.auth().getUser(followerUid);
+
+      // The snapshot to the user's tokens.
+      let tokensSnapshot;
+
+      // The array containing all the user's tokens.
+      let tokens;
+
+      return Promise.all([getDeviceTokensPromise, getFollowerProfilePromise]).then(results => {
+        tokensSnapshot = results[0];
+        const follower = results[1];
+
+        // Check if there are any device tokens.
+        if (!tokensSnapshot.hasChildren()) {
+          return console.log('There are no notification tokens to send to.');
+        }
+        console.log('There are', tokensSnapshot.numChildren(), 'tokens to send notifications to.');
+        console.log('Fetched follower profile', follower);
+
+        // Notification details.
+        const payload = {
+          notification: {
+            title: 'You have a new follower!',
+            body: `${follower.displayName} is now following you.`,
+            icon: follower.photoURL
+          }
+        };
+
+        // Listing all tokens as an array.
+        tokens = Object.keys(tokensSnapshot.val());
+        // Send notifications to all tokens.
+        return admin.messaging().sendToDevice(tokens, payload);
+      }).then((response) => {
+        // For each message check if there was an error.
+        const tokensToRemove = [];
+        response.results.forEach((result, index) => {
+          const error = result.error;
+          if (error) {
+            console.error('Failure sending notification to', tokens[index], error);
+            // Cleanup the tokens who are not registered anymore.
+            if (error.code === 'messaging/invalid-registration-token' ||
+                error.code === 'messaging/registration-token-not-registered') {
+              tokensToRemove.push(tokensSnapshot.ref.child(tokens[index]).remove());
+            }
+          }
+        });
+        return Promise.all(tokensToRemove);
+      });
+    });
