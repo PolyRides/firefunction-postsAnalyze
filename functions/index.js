@@ -230,7 +230,17 @@ const getCollection = (path) => {
 exports.sendRideOfferMatchingNotification = functions.database.ref('/RideOffer')
   .onWrite((change, context) => {
     // Gets all of the profile information
-    let profiles = getCollection("Profile");
+    let profiles = [];
+    database.ref("/" + path).once("value", (data) => {
+      let dataObj = data.val();
+      for (firebaseKey in dataObj) {
+        if (dataObj.hasOwnProperty(firebaseKey)) {
+          let object = dataObj[firebaseKey];
+          profiles.push(object);
+        }
+      }
+    })
+
     console.log("profiles: ", profiles)
     // Don't care when the posts are deleted
     if (!change.after.exists()) {
