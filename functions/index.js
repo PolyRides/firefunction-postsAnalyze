@@ -209,7 +209,7 @@ exports.deleteOldPosts = functions.https.onRequest((request, response) => {
 
 
 const getCollection = (path) => {
-  let arr = []
+  var arr = []
   database.ref("/" + path).once("value", (data) => {
     let dataObj = data.val();
     for (firebaseKey in dataObj) {
@@ -218,8 +218,8 @@ const getCollection = (path) => {
         arr.push(object);
       }
     }
+    return arr;
   })
-  return arr;
 }
 
 /**
@@ -231,14 +231,14 @@ exports.sendRideOfferMatchingNotification = functions.database.ref('/RideOffer')
   .onWrite((change, context) => {
     // Gets all of the profile information
     let profiles = getCollection("Profile");
-
+    console.log("profiles: ", profiles)
     // Don't care when the posts are deleted
     if (!change.after.exists()) {
       return null;
     }
     // otherwise, when the posts are updated, push the data
     const original = change.after.val();
-    
+    console.log("original values: ", original)
     // Only process the newest item in the collection
     let lastItemKey = null;
     Object.keys(original).forEach(element => {
@@ -258,6 +258,8 @@ exports.sendRideOfferMatchingNotification = functions.database.ref('/RideOffer')
         }
         return admin.messaging().sendToDevice(deviceToken, payload);
       }
+      return;
     })
+    return;
     
   });
