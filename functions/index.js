@@ -227,7 +227,7 @@ const getCollection = (path) => {
  *
  * Gets the notification token from the profile, and then send message through cloud messaging service
  */
-exports.sendFollowerNotification = functions.database.ref('/RideOffer')
+exports.sendRideOfferMatchingNotification = functions.database.ref('/RideOffer')
   .onWrite((change, context) => {
     // Gets all of the profile information
     let profiles = getCollection("Profile");
