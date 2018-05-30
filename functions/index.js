@@ -208,19 +208,6 @@ exports.deleteOldPosts = functions.https.onRequest((request, response) => {
 });
 
 
-const getCollection = (path) => {
-  var arr = []
-  database.ref("/" + path).once("value", (data) => {
-    let dataObj = data.val();
-    for (firebaseKey in dataObj) {
-      if (dataObj.hasOwnProperty(firebaseKey)) {
-        let object = dataObj[firebaseKey];
-        arr.push(object);
-      }
-    }
-    return arr;
-  })
-}
 
 /**
  * Triggers when there is a new ride offer
@@ -229,47 +216,43 @@ const getCollection = (path) => {
  */
 exports.sendRideOfferMatchingNotification = functions.database.ref('/RideOffer')
   .onWrite((change, context) => {
-    // Gets all of the profile information
-    let profiles = [];
-    database.ref("/" + path).once("value", (data) => {
-      let dataObj = data.val();
-      for (firebaseKey in dataObj) {
-        if (dataObj.hasOwnProperty(firebaseKey)) {
-          let object = dataObj[firebaseKey];
-          profiles.push(object);
-        }
-      }
-    })
-
-    console.log("profiles: ", profiles)
-    // Don't care when the posts are deleted
+      // Don't care when the posts are deleted
     if (!change.after.exists()) {
       return null;
     }
-    // otherwise, when the posts are updated, push the data
-    const original = change.after.val();
-    console.log("original values: ", original)
-    // Only process the newest item in the collection
-    let lastItemKey = null;
-    Object.keys(original).forEach(element => {
-      lastItemKey = element;
-    });
-    let rideOfferDestination = original[lastItemKey]["destination"];
-    // Loop through the profile array to check for the matches
-    profiles.forEach(profile => {
-      deviceToken = profile["deviceToken"];
-      // send notification only if destination match and there is a deviceToken associated
-      if (profile["destination"] === rideOfferDestination && deviceToken) {
-        const payload = {
-          notification: {
-            title: "Matching Ride",
-            body: "There is a ride offer that matches your request to " + rideOfferDestination,
+    // Gets all of the profile information
+    const getDeviceTokenPromise = database.ref("/Profile").once("value");
+
+    return Promise.all([getDeviceTokenPromise]).then(results => {
+      let profiles = results[0].val();
+
+      // otherwise, when the posts are updated, push the data
+      const original = change.after.val();
+      // Only process the newest item in the collection
+      let lastItemKey = null;
+      Object.keys(original).forEach(element => {
+        lastItemKey = element;
+      });
+      let rideOfferDestination = original[lastItemKey]["destination"];
+      // Loop through the profile array to check for the matches
+      for (key in profiles) {
+        if (profiles.hasOwnProperty(key)) {
+          let profile = profiles[key];
+          deviceToken = profile["deviceToken"];
+          // send notification only if destination match and there is a deviceToken associated
+          if (profile["destination"] === rideOfferDestination && deviceToken) {
+            let token = Object.keys(deviceToken);
+            console.log("deviceToken :", token)
+            const payload = {
+              notification: {
+                title: "Matching Ride",
+                body: "There is a ride offer that matches your request to " + rideOfferDestination,
+              }
+            }
+            return admin.messaging().sendToDevice(token, payload);
           }
         }
-        return admin.messaging().sendToDevice(deviceToken, payload);
       }
       return;
     })
-    return;
-    
-  });
+  })
