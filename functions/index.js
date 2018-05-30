@@ -12,6 +12,7 @@ var req = require('request');
  * tokenizer is the function variable references the natural.WordTokenizer()
  * @type {function} - function reference
  */
+let firstTime = true;
 var tokenizer = new natural.WordTokenizer();
 
 /**
@@ -23,7 +24,6 @@ var classifier = new natural.BayesClassifier();
 /**
  * This is a static variable keep track of whether it is the first time for the function to be excuted
  */
-let firstTime = true;
 var db = admin.database();
 
 // Training Data
@@ -67,7 +67,8 @@ let processInfo = function(message, uid) {
   var result = {
     PostStatus: classifyResult,
     Token: tokenizedResult,
-    ReferenceId: uid
+    ReferenceId: uid,
+    destination: "San Luis Obispo, CA"
   }
   return result;
 }
@@ -129,43 +130,27 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
       response.setHeader('Content-Type', 'application/json');
       // Push posts to the Posts collections
       // Parse data
-      console.log("firstTime: ", firstTime);
       let posts = JSON.parse(body).data;
-
-      // Go from button to top on the first time
-      if (firstTime) {
-        let theId;
-        let idx;
-        for (idx = posts.length - 1; idx >= 0; idx--) {
-          let post = posts[idx];
-          theId = post["id"];
+      var idx;
+      // Keep track of the firstID, it is the the most recent one
+      let latestPostID = posts[0]["id"];
+      for (idx = 0; idx < posts.length; idx++) {
+        let post = posts[idx];
+        let postId = post["id"];
+        
+        // If the post is not the latestPost, it means new posts are constructed
+        if (latestPostID !== postId || firstTime) {
           pushToFireBase("Posts/", post);
         }
-        firstTime = false;
-        latestPostID = theId;
-      } 
-      // Otherwise go from top to button
-      else {
-        var idx;
-        // Keep track of the firstID, it is the the most recent one
-        let firstPostID = posts[0]["id"];
-        for (idx = 0; idx < posts.length; idx++) {
-          let post = posts[idx];
-          let postId = post["id"];
-          
-          // If the post is not the latestPost, it means new posts are constructed
-          if (latestPostID !== postId) {
-            pushToFireBase("Posts/", post);
-          }
-          // Otherwise, it reaches the last post
-          else {
-            latestPostID = firstPostID;
-            response.send({postids: latestPostID});
-            response.end();
-            return;
-          }
+        // Otherwise, it reaches the last post
+        else {
+          latestPostID = firstPostID;
+          response.send({postids: latestPostID});
+          response.end();
+          return;
         }
       }
+    
       // Return in the end
       response.send({postids: latestPostID});
       response.end();
@@ -223,74 +208,56 @@ exports.deleteOldPosts = functions.https.onRequest((request, response) => {
 });
 
 
+const getCollection = (path) => {
+  let arr = []
+  database.ref("/" + path).once("value", (data) => {
+    let dataObj = data.val();
+    for (firebaseKey in dataObj) {
+      if (dataObj.hasOwnProperty(firebaseKey)) {
+        let object = dataObj[firebaseKey];
+        arr.push(object);
+      }
+    }
+  })
+  return arr;
+}
 
 /**
- * Triggers when a user gets a new follower and sends a notification.
+ * Triggers when there is a new ride offer
  *
- * Followers add a flag to `/followers/{followedUid}/{followerUid}`.
- * Users save their device notification tokens to `/users/{followedUid}/notificationTokens/{notificationToken}`.
+ * Gets the notification token from the profile, and then send message through cloud messaging service
  */
-exports.sendFollowerNotification = functions.database.ref('/followers/{followedUid}/{followerUid}')
-    .onWrite((change, context) => {
-      const followerUid = context.params.followerUid;
-      const followedUid = context.params.followedUid;
-      // If un-follow we exit the function.
-      if (!change.after.val()) {
-        return console.log('User ', followerUid, 'un-followed user', followedUid);
-      }
-      console.log('We have a new follower UID:', followerUid, 'for user:', followerUid);
+exports.sendFollowerNotification = functions.database.ref('/RideOffer')
+  .onWrite((change, context) => {
+    // Gets all of the profile information
+    let profiles = getCollection("Profile");
 
-      // Get the list of device notification tokens.
-      const getDeviceTokensPromise = admin.database()
-          .ref(`/users/${followedUid}/notificationTokens`).once('value');
-
-      // Get the follower profile.
-      const getFollowerProfilePromise = admin.auth().getUser(followerUid);
-
-      // The snapshot to the user's tokens.
-      let tokensSnapshot;
-
-      // The array containing all the user's tokens.
-      let tokens;
-
-      return Promise.all([getDeviceTokensPromise, getFollowerProfilePromise]).then(results => {
-        tokensSnapshot = results[0];
-        const follower = results[1];
-
-        // Check if there are any device tokens.
-        if (!tokensSnapshot.hasChildren()) {
-          return console.log('There are no notification tokens to send to.');
-        }
-        console.log('There are', tokensSnapshot.numChildren(), 'tokens to send notifications to.');
-        console.log('Fetched follower profile', follower);
-
-        // Notification details.
+    // Don't care when the posts are deleted
+    if (!change.after.exists()) {
+      return null;
+    }
+    // otherwise, when the posts are updated, push the data
+    const original = change.after.val();
+    
+    // Only process the newest item in the collection
+    let lastItemKey = null;
+    Object.keys(original).forEach(element => {
+      lastItemKey = element;
+    });
+    let rideOfferDestination = original[lastItemKey]["destination"];
+    // Loop through the profile array to check for the matches
+    profiles.forEach(profile => {
+      deviceToken = profile["deviceToken"];
+      // send notification only if destination match and there is a deviceToken associated
+      if (profile["destination"] === rideOfferDestination && deviceToken) {
         const payload = {
           notification: {
-            title: 'You have a new follower!',
-            body: `${follower.displayName} is now following you.`,
-            icon: follower.photoURL
+            title: "Matching Ride",
+            body: "There is a ride offer that matches your request to " + rideOfferDestination,
           }
-        };
-
-        // Listing all tokens as an array.
-        tokens = Object.keys(tokensSnapshot.val());
-        // Send notifications to all tokens.
-        return admin.messaging().sendToDevice(tokens, payload);
-      }).then((response) => {
-        // For each message check if there was an error.
-        const tokensToRemove = [];
-        response.results.forEach((result, index) => {
-          const error = result.error;
-          if (error) {
-            console.error('Failure sending notification to', tokens[index], error);
-            // Cleanup the tokens who are not registered anymore.
-            if (error.code === 'messaging/invalid-registration-token' ||
-                error.code === 'messaging/registration-token-not-registered') {
-              tokensToRemove.push(tokensSnapshot.ref.child(tokens[index]).remove());
-            }
-          }
-        });
-        return Promise.all(tokensToRemove);
-      });
-    });
+        }
+        return admin.messaging().sendToDevice(deviceToken, payload);
+      }
+    })
+    
+  });
