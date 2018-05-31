@@ -109,7 +109,7 @@ let callGoogleAPI = function (text) {
   };
   let getAPIResultPromise = client.analyzeEntities({document: document});
 
-  return Promise.all([getAPIResultPromise]).then(results => {
+  return Promise.all([getAPIResultPromise]).then(result => {
     const entities = result[0].entities;
     return entities;
   }) .catch(err => {
@@ -134,7 +134,7 @@ let processInfo = function (message, uid) {
     return;
   }
 
-  var nlpResult = callGoogleAPI(message);
+  var nlpResult = await callGoogleAPI(message);
   console.log("nlp result: ", nlpResult);
 
   // sendEmail(message, "wenmin.he518@gmail.com");
@@ -144,6 +144,7 @@ let processInfo = function (message, uid) {
     Token: tokenizedResult,
     ReferenceId: uid,
     destination: "San Luis Obispo, CA",
+    departureDate: "01 Jan 2018 00:00:00 GMT"
     // result: {nlpResult}
   }
   return result;
@@ -273,6 +274,7 @@ const deleteCollectionBasedOnTime = function (path, key) {
 exports.deleteOldPosts = functions.https.onRequest((request, response) => {
   // query the database once and then delete all of the old posts
   deleteCollectionBasedOnTime("Posts", "created_time");
+  deleteCollectionBasedOnTime("processedRides", "departureDate");
   response.send("DONE");
 });
 
