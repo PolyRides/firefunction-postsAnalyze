@@ -7,11 +7,12 @@ admin.initializeApp(functions.config().firebase);
 var natural = require('natural');
 var req = require('request');
 var https = require("https");
-const nodeEmailer = require("nodemailer");
+const nodemailer = require("nodemailer");
 const language = require('@google-cloud/language');
 
 const gmailEmail = functions.config().gmail.email;
 const gmailPassword = functions.config().gmail.password;
+
 const mailTransport = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -22,7 +23,7 @@ const mailTransport = nodemailer.createTransport({
 
 
 
-// Instantiates a client
+// Instantiates a clientd
 const client = new language.LanguageServiceClient();
 
 /**
@@ -85,25 +86,19 @@ let getLocationAndMoney = function(text) {
   };
   client.analyzeEntities({document: document})
   .then(result => {
-    console.log("Result[0]: ", result[0]);
-    console.log("Result[1]: ", result[1]);
-
-    const setiment = result[0].documentSentiment;
-
-    // console.log(`text: ${text}`)
-    // console.log(`Sentiment score: ${setiment.score}`);
-    // console.log(`Sentiment magnitude: ${setiment.magnitude}`);
-    return result[1];
+    const entities = result[0].entities;
+    console.log("entities: ", entities)
+    return entities;
   })
   .catch(err => {
     console.log("ERROR: ", err);
   })
 } 
 
-let sendEmail = (message) => {
+let sendEmail = (message, toEmail) => {
   var mailOptions = {
-    from: `${APP_NAME} <noreply@firebase.com>`,
-    to: "whe01@calpoly.edu",
+    from: '"Wen He" <noreply@firebase.com>',
+    to: toEmail,
     subject: "analysis failed",
     text: "Poly Rire Share NLP can not process " + message
   }
@@ -121,15 +116,23 @@ let processInfo = function(message, uid) {
   // Calling the textRazor API to process the information
   var tokenizedResult = tokenizer.tokenize(message);  
   var classifyResult = classifier.classify(message);
-  var nlpResult = getLocationAndMoney(message);
-  sendEmail(message);
 
+  // Don't want to process ride seekings
+  if (classifyResult !== "Ride Offer") {
+    return;
+  }
+
+  var nlpResult = getLocationAndMoney(message);
+  console.log("nlp result: ", nlpResult);
+  
+  // sendEmail(message, "wenmin.he518@gmail.com");
+  
   var result = {
     PostStatus: classifyResult,
     Token: tokenizedResult,
     ReferenceId: uid,
     destination: "San Luis Obispo, CA",
-    result: {nlpResult}
+    // result: {nlpResult}
   }
   return result;
 }
@@ -156,7 +159,6 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
     Object.keys(original).forEach(element => {
       lastItemKey = element;
     });
-    console.log("processedPostsIdArray: ", processedPostsIdArray);
     // Update the processedPostsIdArray when id is processed
     if (!processedPostsIdArray.includes(lastItemKey)) {
       let reference = original[lastItemKey];
@@ -164,7 +166,7 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
       processedPostsIdArray.push(lastItemKey);
       let jsonReference = processInfo(message, lastItemKey);
       // Push the data only when it is a ride offer
-      if (jsonReference.PostStatus === "Ride Offer") {
+      if (jsonReference) {
         return pushToFireBase("processedRides/", jsonReference);
       }
     }
@@ -259,7 +261,6 @@ const deleteCollectionBasedOnTime = function(path, key) {
           let currenTimeUTC = Date.now();
           // Remove object if necessary
           if (dateUTC <  currenTimeUTC) {
-            // console.log("something");
             ref.child("/"+firebaseKey).remove();
           }
         }
@@ -309,7 +310,6 @@ exports.sendRideOfferMatchingNotification = functions.database.ref('/RideOffer')
           // send notification only if destination match and there is a deviceToken associated
           if (profile["destination"] === rideOfferDestination && deviceToken) {
             let token = Object.keys(deviceToken);
-            console.log("deviceToken :", token)
             const payload = {
               notification: {
                 title: "Matching Ride",
