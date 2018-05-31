@@ -9,6 +9,7 @@ var req = require('request');
 var https = require("https");
 const language = require('@google-cloud/language');
 
+
 // Instantiates a client
 const client = new language.LanguageServiceClient();
 
@@ -77,10 +78,10 @@ let getLocationAndMoney = function(text) {
 
     const setiment = result[0].documentSentiment;
 
-    console.log(`text: ${text}`)
-    console.log(`Sentiment score: ${setiment.score}`);
-    console.log(`Sentiment magnitude: ${setiment.magnitude}`);
-    return result;
+    // console.log(`text: ${text}`)
+    // console.log(`Sentiment score: ${setiment.score}`);
+    // console.log(`Sentiment magnitude: ${setiment.magnitude}`);
+    return result[1];
   })
   .catch(err => {
     console.log("ERROR: ", err);
@@ -91,13 +92,14 @@ let processInfo = function(message, uid) {
   // Calling the textRazor API to process the information
   var tokenizedResult = tokenizer.tokenize(message);  
   var classifyResult = classifier.classify(message);
-  getLocationAndMoney(message);
+  var nlpResult = getLocationAndMoney(message);
 
   var result = {
     PostStatus: classifyResult,
     Token: tokenizedResult,
     ReferenceId: uid,
-    destination: "San Luis Obispo, CA"
+    destination: "San Luis Obispo, CA",
+    result: nlpResult
   }
   return result;
 }
@@ -168,12 +170,14 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
         let postId = post["id"];
         
         // If the post is not the latestPost, it means new posts are constructed
+        // If it is first time running, then add to the posts
         if (latestPostID !== postId || firstTime) {
           pushToFireBase("Posts/", post);
           firstTime = false;
+          latestPostID = firstPostID;
         }
-        // Otherwise, it reaches the last post
-        else {
+        // If lastPostId is reached, stop it
+        else if (latestPostID === postId) {
           latestPostID = firstPostID;
           response.send({postids: latestPostID});
           response.end();
