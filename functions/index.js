@@ -7,7 +7,19 @@ admin.initializeApp(functions.config().firebase);
 var natural = require('natural');
 var req = require('request');
 var https = require("https");
+const nodeEmailer = require("nodemailer");
 const language = require('@google-cloud/language');
+
+const gmailEmail = functions.config().gmail.email;
+const gmailPassword = functions.config().gmail.password;
+const mailTransport = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: gmailEmail,
+    pass: gmailPassword,
+  },
+});
+
 
 
 // Instantiates a client
@@ -88,18 +100,36 @@ let getLocationAndMoney = function(text) {
   })
 } 
 
+let sendEmail = (message) => {
+  var mailOptions = {
+    from: `${APP_NAME} <noreply@firebase.com>`,
+    to: "whe01@calpoly.edu",
+    subject: "analysis failed",
+    text: "Poly Rire Share NLP can not process " + message
+  }
+
+  mailTransport.sendMail(mailOptions, function(error, info){
+    if (error) {
+      console.log(error);
+    } else {
+      console.log('Email sent: ' + info.response);
+    }
+  });
+}
+
 let processInfo = function(message, uid) {
   // Calling the textRazor API to process the information
   var tokenizedResult = tokenizer.tokenize(message);  
   var classifyResult = classifier.classify(message);
   var nlpResult = getLocationAndMoney(message);
+  sendEmail(message);
 
   var result = {
     PostStatus: classifyResult,
     Token: tokenizedResult,
     ReferenceId: uid,
     destination: "San Luis Obispo, CA",
-    result: nlpResult
+    result: {nlpResult}
   }
   return result;
 }
@@ -133,7 +163,10 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
       let message = reference["message"];
       processedPostsIdArray.push(lastItemKey);
       let jsonReference = processInfo(message, lastItemKey);
-      return pushToFireBase("processedRides/", jsonReference);
+      // Push the data only when it is a ride offer
+      if (jsonReference.PostStatus === "Ride Offer") {
+        return pushToFireBase("processedRides/", jsonReference);
+      }
     }
     return null;
   })
