@@ -2,17 +2,18 @@
  * packages and libraries
  */
 const functions = require('firebase-functions');
-var admin = require('firebase-admin');
-admin.initializeApp(functions.config().firebase);
-var natural = require('natural');
-var req = require('request');
-var https = require("https");
+const admin = require('firebase-admin');
+const natural = require('natural');
+const req = require('request');
+const https = require("https");
 const nodemailer = require("nodemailer");
 const language = require('@google-cloud/language');
 
+/**
+ * email, password, and mailTransporter for email notification service
+ */
 const gmailEmail = functions.config().gmail.email;
 const gmailPassword = functions.config().gmail.password;
-
 const mailTransport = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -21,7 +22,7 @@ const mailTransport = nodemailer.createTransport({
   },
 });
 
-
+admin.initializeApp(functions.config().firebase);
 
 // Instantiates a clientd
 const client = new language.LanguageServiceClient();
@@ -61,40 +62,23 @@ var processedPostsIdArray = [];
 
 // The Mock data
 const rideOffermockData = {
-origin: "San Luis Obispo, CA", 
-originLat: 35.30199,
-originLon: -120.66381, 
-Destination: "San Jose, CA", // (City, State)
-destinationLat: 37.3382,
-destinationLon: -121.8863,
-departureDate: "04/20/2018 14:00",
-seats: 3,
-cost: 20,
-description: "This is a ride"
+  origin: "San Luis Obispo, CA",
+  originLat: 35.30199,
+  originLon: -120.66381,
+  Destination: "San Jose, CA", // (City, State)
+  destinationLat: 37.3382,
+  destinationLon: -121.8863,
+  departureDate: "04/20/2018 14:00",
+  seats: 3,
+  cost: 20,
+  description: "This is a ride"
 }
 
 /**
- * Handles the main logics of NLP
- * @param {string} message - The post string from facebook post
- * @param {string} uid - The unique id associated with the firebase collection(firebase collection uid)
- * @return {object} json object with classification result and token array with a referenceID for the uid
-//  */
-let getLocationAndMoney = function(text) {
-  const document = {
-    content: text,
-    type: "PLAIN_TEXT",
-  };
-  client.analyzeEntities({document: document})
-  .then(result => {
-    const entities = result[0].entities;
-    console.log("entities: ", entities)
-    return entities;
-  })
-  .catch(err => {
-    console.log("ERROR: ", err);
-  })
-} 
-
+ * Function that is responsible for sending email
+ * @param {string} message the message to be send
+ * @param {string} toEmail email receiver
+ */
 let sendEmail = (message, toEmail) => {
   var mailOptions = {
     from: '"Wen He" <noreply@firebase.com>',
@@ -103,7 +87,7 @@ let sendEmail = (message, toEmail) => {
     text: "Poly Rire Share NLP can not process " + message
   }
 
-  mailTransport.sendMail(mailOptions, function(error, info){
+  mailTransport.sendMail(mailOptions, function (error, info) {
     if (error) {
       console.log(error);
     } else {
@@ -112,9 +96,37 @@ let sendEmail = (message, toEmail) => {
   });
 }
 
-let processInfo = function(message, uid) {
+
+/**
+ * Handles the main logics of NLP
+ * @param {string} text - The post string from facebook post
+ * @return {object} json object with classification result and token array with a referenceID for the uid
+ */
+let callGoogleAPI = function (text) {
+  const document = {
+    content: text,
+    type: "PLAIN_TEXT",
+  };
+  let getAPIResultPromise = client.analyzeEntities({document: document});
+
+  return Promise.all([getAPIResultPromise]).then(results => {
+    const entities = result[0].entities;
+    return entities;
+  }) .catch(err => {
+    console.log("ERROR: ", err);    
+  })
+}
+
+
+/**
+ * Main logics of processing post information
+ * 
+ * @param {string} message message to be processed
+ * @param {string} uid unique referenceID for the post from firebase
+ */
+let processInfo = function (message, uid) {
   // Calling the textRazor API to process the information
-  var tokenizedResult = tokenizer.tokenize(message);  
+  var tokenizedResult = tokenizer.tokenize(message);
   var classifyResult = classifier.classify(message);
 
   // Don't want to process ride seekings
@@ -122,11 +134,11 @@ let processInfo = function(message, uid) {
     return;
   }
 
-  var nlpResult = getLocationAndMoney(message);
+  var nlpResult = callGoogleAPI(message);
   console.log("nlp result: ", nlpResult);
-  
+
   // sendEmail(message, "wenmin.he518@gmail.com");
-  
+
   var result = {
     PostStatus: classifyResult,
     Token: tokenizedResult,
@@ -136,8 +148,6 @@ let processInfo = function(message, uid) {
   }
   return result;
 }
-
-var rideOfferRef = db.ref("/RideOffer");
 
 
 /**
@@ -152,7 +162,7 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
     }
     // otherwise, when the posts are updated, push the data
     const original = change.after.val();
-    
+
 
     // Only process the newest item in the collection
     let lastItemKey = null;
@@ -203,7 +213,7 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
       for (idx = 0; idx < posts.length; idx++) {
         let post = posts[idx];
         let postId = post["id"];
-        
+
         // If the post is not the latestPost, it means new posts are constructed
         // If it is first time running, then add to the posts
         if (latestPostID !== postId || firstTime) {
@@ -214,39 +224,30 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
         // If lastPostId is reached, stop it
         else if (latestPostID === postId) {
           latestPostID = firstPostID;
-          response.send({postids: latestPostID});
+          response.send({
+            postids: latestPostID
+          });
           response.end();
           return;
         }
       }
-    
+
       // Return in the end
-      response.send({postids: latestPostID});
+      response.send({
+        postids: latestPostID
+      });
       response.end();
-    }}
-  )});
+    }
+  })
+});
 
-
-
-// const rideOffermockData = {
-//   origin: "San Luis Obispo, CA", 
-//   originLat: 35.30199,
-//   originLon: -120.66381, 
-//   Destination: "San Jose, CA", // (City, State)
-//   destinationLat: 37.3382,
-//   destinationLon: -121.8863,
-//   departureDate: "04/20/2018 14:00",
-//   seats: 3,
-//   cost: 20,
-//   description: "This is a ride"
-//   }
 
 /**
  * Deletes the json collections with the object at key to be older than current time
  * @param {string} path path to the json collection
  * @param {string} key the key that references to the dateTime object to be compared eg. departureDate key with in the mock data
  */
-const deleteCollectionBasedOnTime = function(path, key) {
+const deleteCollectionBasedOnTime = function (path, key) {
   let ref = db.ref("/" + path);
   ref.once("value", (data) => {
     // Get the json objects
@@ -260,8 +261,8 @@ const deleteCollectionBasedOnTime = function(path, key) {
           let dateUTC = Date.parse(item[key]);
           let currenTimeUTC = Date.now();
           // Remove object if necessary
-          if (dateUTC <  currenTimeUTC) {
-            ref.child("/"+firebaseKey).remove();
+          if (dateUTC < currenTimeUTC) {
+            ref.child("/" + firebaseKey).remove();
           }
         }
       }
@@ -284,7 +285,7 @@ exports.deleteOldPosts = functions.https.onRequest((request, response) => {
  */
 exports.sendRideOfferMatchingNotification = functions.database.ref('/RideOffer')
   .onWrite((change, context) => {
-      // Don't care when the posts are deleted
+    // Don't care when the posts are deleted
     if (!change.after.exists()) {
       return null;
     }
