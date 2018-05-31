@@ -134,20 +134,33 @@ let processInfo = function (message, uid) {
     return;
   }
 
-  var nlpResult = await callGoogleAPI(message);
-  console.log("nlp result: ", nlpResult);
+  const document = {
+    content: text,
+    type: "PLAIN_TEXT",
+  };
+  let getAPIResultPromise = client.analyzeEntities({document: document});
+
+  return Promise.all([getAPIResultPromise]).then(result => {
+    const entities = result[0].entities;
+    var result = {
+      PostStatus: classifyResult,
+      Token: tokenizedResult,
+      ReferenceId: uid,
+      destination: "San Luis Obispo, CA",
+      departureDate: "01 Jan 2018 00:00:00 GMT",
+      result: entities
+    }
+    return result;
+  }) .catch(err => {
+    console.log("ERROR: ", err);    
+  })
+
+  // var nlpResult = callGoogleAPI(message);
+  // console.log("nlp result: ", nlpResult);
 
   // sendEmail(message, "wenmin.he518@gmail.com");
 
-  var result = {
-    PostStatus: classifyResult,
-    Token: tokenizedResult,
-    ReferenceId: uid,
-    destination: "San Luis Obispo, CA",
-    departureDate: "01 Jan 2018 00:00:00 GMT"
-    // result: {nlpResult}
-  }
-  return result;
+
 }
 
 
