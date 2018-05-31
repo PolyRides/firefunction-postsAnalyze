@@ -70,14 +70,17 @@ let getLocationAndMoney = function(text) {
     content: text,
     type: "PLAIN_TEXT",
   };
-  client.analyzeSetiment({document: document})
+  client.analyzeEntities({document: document})
   .then(result => {
-    console.log("Result: ", result);
+    console.log("Result[0]: ", result[0]);
+    console.log("Result[1]: ", result[1]);
+
     const setiment = result[0].documentSentiment;
 
     console.log(`text: ${text}`)
-    console.log(`Sentiment score: ${sentiment.score}`);
-    console.log(`Sentiment magnitude: ${sentiment.magnitude}`);
+    console.log(`Sentiment score: ${setiment.score}`);
+    console.log(`Sentiment magnitude: ${setiment.magnitude}`);
+    return result;
   })
   .catch(err => {
     console.log("ERROR: ", err);
@@ -128,7 +131,7 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
       let message = reference["message"];
       processedPostsIdArray.push(lastItemKey);
       let jsonReference = processInfo(message, lastItemKey);
-      return pushToFireBase("RideOffer/", jsonReference);
+      return pushToFireBase("processedRides/", jsonReference);
     }
     return null;
   })
@@ -159,7 +162,7 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
       let posts = JSON.parse(body).data;
       var idx;
       // Keep track of the firstID, it is the the most recent one
-      let latestPostID = posts[0]["id"];
+      let firstPostID = posts[0]["id"];
       for (idx = 0; idx < posts.length; idx++) {
         let post = posts[idx];
         let postId = post["id"];
