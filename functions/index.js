@@ -6,7 +6,11 @@ var admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 var natural = require('natural');
 var req = require('request');
+var https = require("https");
+const language = require('@google-cloud/language');
 
+// Instantiates a client
+const client = new language.LanguageServiceClient();
 
 /**
  * tokenizer is the function variable references the natural.WordTokenizer()
@@ -61,9 +65,31 @@ description: "This is a ride"
  * @param {string} uid - The unique id associated with the firebase collection(firebase collection uid)
  * @return {object} json object with classification result and token array with a referenceID for the uid
 //  */
+let getLocationAndMoney = function(text) {
+  const document = {
+    content: text,
+    type: "PLAIN_TEXT",
+  };
+  client.analyzeSetiment({document: document})
+  .then(result => {
+    console.log("Result: ", result);
+    const setiment = result[0].documentSentiment;
+
+    console.log(`text: ${text}`)
+    console.log(`Sentiment score: ${sentiment.score}`);
+    console.log(`Sentiment magnitude: ${sentiment.magnitude}`);
+  })
+  .catch(err => {
+    console.log("ERROR: ", err);
+  })
+} 
+
 let processInfo = function(message, uid) {
+  // Calling the textRazor API to process the information
   var tokenizedResult = tokenizer.tokenize(message);  
   var classifyResult = classifier.classify(message);
+  getLocationAndMoney(message);
+
   var result = {
     PostStatus: classifyResult,
     Token: tokenizedResult,
@@ -141,6 +167,7 @@ exports.QueryPostAPI = functions.https.onRequest((request, response) => {
         // If the post is not the latestPost, it means new posts are constructed
         if (latestPostID !== postId || firstTime) {
           pushToFireBase("Posts/", post);
+          firstTime = false;
         }
         // Otherwise, it reaches the last post
         else {
