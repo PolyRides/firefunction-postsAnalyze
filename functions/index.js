@@ -12,9 +12,8 @@ const language = require('@google-cloud/language');
 /**
  * email, password, and mailTransporter for email notification service
  */
-const gmailEmail = functions.config().gmail.email;
-const gmailPassword = functions.config().gmail.password;
-const mapAPIKey = functions.config().map.key;
+const gmailEmail = "polyrides.us@gmail.com";
+const gmailPassword = "Hwm12300";
 const mailTransport = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -309,35 +308,59 @@ exports.sendRideOfferMatchingNotification = functions.database.ref('/RideOffer')
     }
     // Gets all of the profile information
     const getDeviceTokenPromise = database.ref("/Profile").once("value");
+    const getRideRequestPromise = database.ref("/RideRequest").once("value");
 
-    return Promise.all([getDeviceTokenPromise]).then(results => {
+    return Promise.all([getDeviceTokenPromise, getRideRequestPromise]).then(results => {
       let profiles = results[0].val();
+      let rideRequests = results[1].val();
+
 
       // otherwise, when the posts are updated, push the data
       const original = change.after.val();
       // Only process the newest item in the collection
       let lastItemKey = null;
-      object.keys(original).forEach(element => {
-        let rideOfferDestination = element["destination"];
-        // Loop through the profile array to check for the matches
-        for (key in profiles) {
-          if (profiles.hasOwnProperty(key)) {
-            let profile = profiles[key];
-            deviceToken = profile["deviceToken"];
-            // send notification only if destination match and there is a deviceToken associated
-            if (profile["destination"] === rideOfferDestination && deviceToken) {
-              let token = Object.keys(deviceToken);
-              const payload = {
-                notification: {
-                  title: "Matching Ride",
-                  body: "There is a ride offer that matches your request to " + rideOfferDestination,
-                }
+      for (let key in original) {
+        lastItemKey = key;
+      }
+      for (key in rideRequests) {
+        
+        if (rideRequests.hasOwnProperty(key)) {
+          let rideOfferDestination = original[lastItemKey]["destination"] ;
+          let rideOfferOrigin = original[lastItemKey]["origin"] ;
+          let rideRequest = rideRequests[key];
+          if (rideRequest["destination"] === rideOfferDestination 
+            &&
+            rideRequest["origin"] === rideOfferOrigin 
+            &&
+            rideRequest["riderId"] 
+            && profiles[rideRequest["riderId"]]["deviceToken"]
+          ) {
+            
+            // Gets deviceToken
+            let deviceToken = profiles[rideRequest["riderId"]]["deviceToken"];
+            const payload = {
+              notification: {
+                title: 'You have a matching ride!',
+                body: "A new ride is available for you",
               }
-              return admin.messaging().sendToDevice(token, payload);
             }
+
+            // Send message
+            let deviceTok = [deviceToken];
+            console.log("deviceTok: ", deviceTok);
+            admin.messaging().sendToDevice(deviceTok, payload)
+            .then((response) => {
+              console.log("successfully sent message: ", response);
+            })
+            .catch((error) => {
+              console.log("error: ", error);
+            })
+          
+            return;
+
           }
         }
-      })
+      }
       return;
     })
   })
