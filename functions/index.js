@@ -14,6 +14,7 @@ const language = require('@google-cloud/language');
  */
 const gmailEmail = functions.config().gmail.email;
 const gmailPassword = functions.config().gmail.password;
+const mapAPIKey = functions.config().map.key;
 const mailTransport = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -117,7 +118,6 @@ let callGoogleAPI = function (text) {
   })
 }
 
-
 /**
  * Main logics of processing post information
  * 
@@ -135,31 +135,38 @@ let processInfo = function (message, uid) {
   }
 
   const document = {
-    content: text,
+    content: message,
     type: "PLAIN_TEXT",
   };
   let getAPIResultPromise = client.analyzeEntities({document: document});
 
-  return Promise.all([getAPIResultPromise]).then(result => {
-    const entities = result[0].entities;
+  return Promise.all([getAPIResultPromise]).then(analyzeResult => {
+    const entities = analyzeResult[0][0].entities;
+    let locations = [];
+
+    entities.forEach(data => {
+      console.log("data: ", data)
+      if (data.type && data["type"] === "LOCATION") {
+        locations.push(data["name"]);
+      }
+    })
+
+    console.log("locations: ", locations);
+
+    sendEmail("message can not be processed: " + message, "wenmin.he518@gmail.com")
     var result = {
       PostStatus: classifyResult,
-      Token: tokenizedResult,
+      // Token: tokenizedResult,
       ReferenceId: uid,
-      destination: "San Luis Obispo, CA",
-      departureDate: "01 Jan 2018 00:00:00 GMT",
-      result: entities
+      origin: locations[0] ? locations[0] : null,
+      destination: locations[1] ? locations[1] : null,
+      // departureDate: "01 Jan 2018 00:00:00 GMT",
+      // result: entities
     }
-    return result;
+    return pushToFireBase("processedRides/", result);
   }) .catch(err => {
     console.log("ERROR: ", err);    
   })
-
-  // var nlpResult = callGoogleAPI(message);
-  // console.log("nlp result: ", nlpResult);
-
-  // sendEmail(message, "wenmin.he518@gmail.com");
-
 
 }
 
@@ -188,11 +195,7 @@ exports.ProcessNewPosts = functions.database.ref('/Posts/')
       let reference = original[lastItemKey];
       let message = reference["message"];
       processedPostsIdArray.push(lastItemKey);
-      let jsonReference = processInfo(message, lastItemKey);
-      // Push the data only when it is a ride offer
-      if (jsonReference) {
-        return pushToFireBase("processedRides/", jsonReference);
-      }
+      processInfo(message, lastItemKey);
     }
     return null;
   })
@@ -314,28 +317,27 @@ exports.sendRideOfferMatchingNotification = functions.database.ref('/RideOffer')
       const original = change.after.val();
       // Only process the newest item in the collection
       let lastItemKey = null;
-      Object.keys(original).forEach(element => {
-        lastItemKey = element;
-      });
-      let rideOfferDestination = original[lastItemKey]["destination"];
-      // Loop through the profile array to check for the matches
-      for (key in profiles) {
-        if (profiles.hasOwnProperty(key)) {
-          let profile = profiles[key];
-          deviceToken = profile["deviceToken"];
-          // send notification only if destination match and there is a deviceToken associated
-          if (profile["destination"] === rideOfferDestination && deviceToken) {
-            let token = Object.keys(deviceToken);
-            const payload = {
-              notification: {
-                title: "Matching Ride",
-                body: "There is a ride offer that matches your request to " + rideOfferDestination,
+      object.keys(original).forEach(element => {
+        let rideOfferDestination = element["destination"];
+        // Loop through the profile array to check for the matches
+        for (key in profiles) {
+          if (profiles.hasOwnProperty(key)) {
+            let profile = profiles[key];
+            deviceToken = profile["deviceToken"];
+            // send notification only if destination match and there is a deviceToken associated
+            if (profile["destination"] === rideOfferDestination && deviceToken) {
+              let token = Object.keys(deviceToken);
+              const payload = {
+                notification: {
+                  title: "Matching Ride",
+                  body: "There is a ride offer that matches your request to " + rideOfferDestination,
+                }
               }
+              return admin.messaging().sendToDevice(token, payload);
             }
-            return admin.messaging().sendToDevice(token, payload);
           }
         }
-      }
+      })
       return;
     })
   })

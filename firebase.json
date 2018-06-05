@@ -6,11 +6,17 @@
     "source": "functions"
   },
   "hosting": {
-    "public": "public",
+    "public": "testing/build",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
   }
 }
